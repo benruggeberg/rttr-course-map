@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RTTR Course Map — Operations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   RACE THRU THE REDWOODS — OPERATIONS COURSE MAP
+   Single-file SVG map. Screen controls never print.
+   ============================================================ */
+
+:root{
+  --ink:#111111;
+  --paper:#ffffff;
+  --route:#1a1a1a;
+  --route-casing:#ffffff;
+  --trail:#9a9a9a;
+  --water:#1f6f8b;
+  --vol:#111111;
+  --music:#6b4a9c;
+  --bigfoot:#5c4033;
+  --accent:#0f5c2e;
+  --hair:#d8d8d8;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:#e9e9e6;
+  font-family:"Barlow Semi Condensed",-apple-system,"Helvetica Neue",Arial,sans-serif;
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---------- CONTROL PANEL (screen only) ---------- */
+#controls{
+  position:fixed; top:0; left:0; bottom:0; width:258px;
+  background:#16181a; color:#e8e8e6; overflow-y:auto;
+  padding:16px 16px 40px; z-index:100;
+  font-size:13.5px; line-height:1.35;
+  border-right:1px solid #000;
+}
+#controls h1{
+  font-family:Anton,Impact,sans-serif; font-weight:400;
+  font-size:19px; letter-spacing:.02em; margin:0 0 2px; text-transform:uppercase;
+}
+#controls .sub{color:#8d9296; font-size:11.5px; margin:0 0 16px; letter-spacing:.04em; text-transform:uppercase}
+#controls fieldset{border:0; border-top:1px solid #2b2f33; margin:0 0 14px; padding:12px 0 0}
+#controls legend{
+  font-size:10.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:#7f858a; padding:0 6px 0 0;
+}
+#controls label{display:flex; align-items:center; gap:8px; padding:3px 0; cursor:pointer}
+#controls label:hover{color:#fff}
+#controls input[type=checkbox]{accent-color:#4ea36b; width:15px; height:15px; margin:0}
+#controls select,#controls button,#controls input[type=text]{
+  width:100%; background:#23272b; color:#e8e8e6; border:1px solid #383d42;
+  border-radius:3px; padding:6px 8px; font:inherit; font-size:13px; margin-top:6px;
+}
+#controls button{cursor:pointer; text-align:left}
+#controls button:hover{background:#2e343a}
+#controls button.primary{background:#2a6b45; border-color:#357f53}
+#controls button.primary:hover{background:#338053}
+#controls .hint{color:#7f858a; font-size:11.5px; margin:8px 0 0}
+#pickLog{
+  background:#0d0f10; border:1px solid #2b2f33; border-radius:3px;
+  padding:8px; margin-top:8px; max-height:150px; overflow:auto;
+  font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px; color:#9fd6b4;
+  white-space:pre-wrap; word-break:break-all;
+}
+#dropzone{
+  border:1.5px dashed #4a5157; border-radius:4px; padding:14px 10px;
+  text-align:center; color:#8d9296; font-size:12px; margin-top:8px; cursor:pointer;
+}
+#dropzone.over{border-color:#4ea36b; color:#9fd6b4; background:#1c241e}
+
+/* ---------- SHEET ---------- */
+#stage{margin-left:258px; padding:26px; display:flex; justify-content:center}
+#sheet{
+  background:var(--paper); box-shadow:0 2px 14px rgba(0,0,0,.22);
+  position:relative; overflow:hidden;
+}
+#sheet svg{display:block; width:100%; height:100%}
+
+/* ---------- MAP TYPE ---------- */
+.map-title{font-family:Anton,Impact,sans-serif; text-transform:uppercase; letter-spacing:.01em; fill:var(--ink)}
+.map-sub,.map-label,.legend-txt{font-family:"Barlow Semi Condensed",Arial,sans-serif}
+.halo{paint-order:stroke; stroke:#fff; stroke-width:3.4px; stroke-linejoin:round}
+
+/* ---------- LAYER VISIBILITY ---------- */
+/* Each layer group hides when its class is present on the svg root. */
+.off-trails    .layer-trails,
+.off-route     .layer-route,
+.off-arrows    .layer-arrows,
+.off-trailname .layer-trailname,
+.off-water     .layer-water,
+.off-vol       .layer-vol,
+.off-music     .layer-music,
+.off-bigfoot   .layer-bigfoot,
+.off-mile      .layer-mile,
+.off-terminus  .layer-terminus,
+.off-legend    .layer-legend,
+.off-compass   .layer-compass,
+.off-scale     .layer-scale,
+.off-title     .layer-title,
+.off-brief     .layer-brief,
+.off-elev      .layer-elev,
+.off-labels    .marker-label{display:none}
+
+/* ---------- THEMES ---------- */
+.theme-field{--route:#1a1a1a;--trail:#9a9a9a;--paper:#ffffff}
+.theme-mono {--route:#000000;--trail:#b0b0b0;--water:#000;--vol:#000;--music:#000;--bigfoot:#000}
+.theme-mono .marker-fill{fill:#fff}
+/* Poster palette: pale sage paper, deep understory green, redwood-bark accent.
+   Grounded in the park itself rather than a generic warm-cream treatment. */
+.theme-forest{
+  --paper:#eef1ea; --ink:#1b2a1e;
+  --route:#16341f; --route-casing:#eef1ea;
+  --trail:#a8b5a2; --hair:#c3cdbd;
+  --accent:#6b2f1a;
+  --water:#1f5f7a; --vol:#16341f; --music:#4a3a6b; --bigfoot:#4a3a2a;
+}
+.theme-forest #sheet{background:#eef1ea}
+
+/* ---------- PRINT ---------- */
+@media print{
+  body{background:#fff}
+  #controls{display:none !important}
+  #stage{margin:0; padding:0; display:block}
+  #sheet{box-shadow:none; width:100% !important; height:100vh !important}
+  .no-print{display:none !important}
+}
+</style>
+</head>
+<body>
+
+<!-- ================= CONTROLS (never printed) ================= -->
+<aside id="controls">
+  <h1>Course Map</h1>
+  <p class="sub">Race Thru The Redwoods · Ops</p>
+
+  <fieldset>
+    <legend>Output preset</legend>
+    <select id="presetSel">
+      <option value="volunteer">Volunteer handout · Letter · mono</option>
+      <option value="poster">Poster · 24 × 36 · forest</option>
+    </select>
+    <p class="hint">Sets sheet size, palette, and layers in one move. Adjust anything below afterwards.</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Course data</legend>
+    <div id="dropzone">Drop your Strava <b>.gpx</b> here<br>or click to choose a file</div>
+    <input type="file" id="gpxFile" accept=".gpx,application/gpx+xml" hidden>
+    <button id="bakeBtn">Copy track for DATA block</button>
+    <p class="hint" id="trackInfo">No track loaded.</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Layers</legend>
+    <label><input type="checkbox" data-layer="route" checked> Race route</label>
+    <label><input type="checkbox" data-layer="terminus" checked> Start / finish</label>
+    <label><input type="checkbox" data-layer="arrows" checked> Direction arrows</label>
+    <label><input type="checkbox" data-layer="trails" checked> Other park trails</label>
+    <label><input type="checkbox" data-layer="trailname" checked> Trail names</label>
+    <label><input type="checkbox" data-layer="mile" checked> Mile markers</label>
+    <label><input type="checkbox" data-layer="water" checked> Water stations</label>
+    <label><input type="checkbox" data-layer="vol" checked> Volunteer posts</label>
+    <label><input type="checkbox" data-layer="music" checked> Musicians</label>
+    <label><input type="checkbox" data-layer="bigfoot" checked> Bigfoot</label>
+    <label><input type="checkbox" data-layer="labels" checked> Marker text labels</label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Furniture</legend>
+    <label><input type="checkbox" data-layer="title" checked> Title block</label>
+    <label><input type="checkbox" data-layer="legend" checked> Legend</label>
+    <label><input type="checkbox" data-layer="compass" checked> North arrow</label>
+    <label><input type="checkbox" data-layer="scale" checked> Scale bar</label>
+    <label><input type="checkbox" data-layer="brief" checked> Volunteer brief panel</label>
+    <label><input type="checkbox" data-layer="elev"> Elevation profile</label>
+    <p class="hint">Brief panel and elevation profile share the bottom band. Use the brief for volunteers, the profile for the poster.</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Sheet</legend>
+    <select id="pageSel">
+      <option value="8.5,11">Letter · 8.5 × 11 portrait</option>
+      <option value="11,8.5">Letter · 11 × 8.5 landscape</option>
+      <option value="11,17">Tabloid · 11 × 17 portrait</option>
+      <option value="18,24">Poster · 18 × 24 portrait</option>
+      <option value="24,36">Poster · 24 × 36 portrait</option>
+      <option value="36,24">Poster · 36 × 24 landscape</option>
+    </select>
+    <select id="themeSel">
+      <option value="theme-field">Field — full colour</option>
+      <option value="theme-mono">Mono — photocopy safe</option>
+      <option value="theme-forest">Forest — poster</option>
+    </select>
+    <select id="symbolSel">
+      <option value="emoji">Symbols — emoji</option>
+      <option value="shapes">Symbols — outlined shapes</option>
+    </select>
+    <button class="primary" onclick="window.print()">Print / Save as PDF</button>
+    <p class="hint">In the print dialog set margins to <b>None</b> and turn <b>Background graphics</b> on.</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Coordinate picker</legend>
+    <label><input type="checkbox" id="pickMode"> Click map to capture lat/lon</label>
+    <div id="pickLog">Points you click land here, formatted for the DATA block.</div>
+    <button id="copyPicks">Copy captured points</button>
+    <button id="clearPicks">Clear</button>
+  </fieldset>
+</aside>
+
+<!-- ================= SHEET ================= -->
+<main id="stage">
+  <div id="sheet"><svg id="map" xmlns="http://www.w3.org/2000/svg"></svg></div>
+</main>
+
+<script>
+/* ==============================================================
+   DATA — everything you edit lives in this block.
+   Coordinates are [latitude, longitude]. Use the coordinate
+   picker in the sidebar to capture them by clicking the map.
+   ============================================================== */
+const DATA = {
+
+  meta: {
+    title:    "56th Annual Race Thru The Redwoods",
+    subtitle: "10K Course · Henry Cowell Redwoods State Park",
+    date:     "Sunday, August 16, 2026",
+    sheetNote:""
+  },
+
+  // Paste your GPX track here to make the file self-contained.
+  // Load the .gpx in the sidebar, then hit "Copy track for DATA block".
+  track: [[37.04127,-122.06236],[37.04110,-122.06225],[37.04085,-122.06207],[37.04059,-122.06185],[37.04049,-122.06206],[37.04040,-122.06211],[37.04011,-122.06243],[37.04001,-122.06262],[37.04003,-122.06278],[37.04006,-122.06286],[37.04005,-122.06283],[37.04010,-122.06296],[37.04003,-122.06313],[37.03975,-122.06314],[37.03962,-122.06319],[37.03951,-122.06328],[37.03943,-122.06338],[37.03931,-122.06368],[37.03937,-122.06392],[37.03948,-122.06418],[37.03945,-122.06437],[37.03921,-122.06418],[37.03880,-122.06403],[37.03831,-122.06408],[37.03818,-122.06405],[37.03776,-122.06390],[37.03740,-122.06378],[37.03720,-122.06345],[37.03712,-122.06318],[37.03697,-122.06283],[37.03694,-122.06278],[37.03686,-122.06275],[37.03681,-122.06266],[37.03658,-122.06229],[37.03649,-122.06225],[37.03610,-122.06189],[37.03598,-122.06166],[37.03592,-122.06161],[37.03573,-122.06111],[37.03540,-122.06037],[37.03524,-122.05984],[37.03521,-122.05947],[37.03500,-122.05925],[37.03484,-122.05902],[37.03467,-122.05867],[37.03430,-122.05826],[37.03414,-122.05818],[37.03384,-122.05789],[37.03377,-122.05786],[37.03327,-122.05745],[37.03276,-122.05705],[37.03273,-122.05698],[37.03268,-122.05696],[37.03228,-122.05665],[37.03202,-122.05634],[37.03159,-122.05608],[37.03125,-122.05584],[37.03114,-122.05580],[37.03107,-122.05581],[37.03055,-122.05597],[37.03011,-122.05588],[37.03002,-122.05583],[37.02993,-122.05576],[37.02976,-122.05571],[37.02966,-122.05563],[37.02960,-122.05557],[37.02950,-122.05526],[37.02943,-122.05522],[37.02928,-122.05521],[37.02900,-122.05522],[37.02871,-122.05521],[37.02861,-122.05523],[37.02859,-122.05530],[37.02860,-122.05540],[37.02864,-122.05549],[37.02887,-122.05584],[37.02893,-122.05598],[37.02895,-122.05617],[37.02894,-122.05647],[37.02890,-122.05656],[37.02883,-122.05660],[37.02869,-122.05660],[37.02853,-122.05664],[37.02846,-122.05660],[37.02800,-122.05622],[37.02785,-122.05626],[37.02774,-122.05625],[37.02749,-122.05615],[37.02724,-122.05607],[37.02713,-122.05602],[37.02694,-122.05589],[37.02671,-122.05566],[37.02655,-122.05557],[37.02639,-122.05544],[37.02623,-122.05535],[37.02600,-122.05529],[37.02596,-122.05526],[37.02587,-122.05526],[37.02570,-122.05499],[37.02561,-122.05468],[37.02551,-122.05459],[37.02540,-122.05454],[37.02532,-122.05442],[37.02529,-122.05437],[37.02531,-122.05428],[37.02526,-122.05414],[37.02526,-122.05405],[37.02521,-122.05396],[37.02513,-122.05393],[37.02507,-122.05388],[37.02493,-122.05369],[37.02480,-122.05360],[37.02469,-122.05339],[37.02467,-122.05320],[37.02461,-122.05311],[37.02469,-122.05311],[37.02461,-122.05311],[37.02424,-122.05317],[37.02381,-122.05315],[37.02371,-122.05307],[37.02357,-122.05289],[37.02356,-122.05281],[37.02349,-122.05272],[37.02342,-122.05244],[37.02338,-122.05240],[37.02334,-122.05223],[37.02320,-122.05204],[37.02314,-122.05182],[37.02307,-122.05101],[37.02304,-122.05087],[37.02308,-122.05038],[37.02304,-122.05016],[37.02304,-122.05007],[37.02294,-122.04985],[37.02277,-122.04962],[37.02279,-122.04958],[37.02277,-122.04948],[37.02279,-122.04932],[37.02283,-122.04923],[37.02283,-122.04904],[37.02278,-122.04885],[37.02276,-122.04855],[37.02271,-122.04842],[37.02268,-122.04837],[37.02258,-122.04832],[37.02244,-122.04832],[37.02231,-122.04828],[37.02212,-122.04815],[37.02180,-122.04757],[37.02168,-122.04743],[37.02133,-122.04716],[37.02108,-122.04689],[37.02083,-122.04668],[37.02069,-122.04653],[37.02049,-122.04641],[37.02024,-122.04635],[37.01991,-122.04621],[37.01985,-122.04621],[37.01953,-122.04604],[37.01930,-122.04595],[37.01922,-122.04585],[37.01921,-122.04574],[37.01915,-122.04564],[37.01911,-122.04545],[37.01916,-122.04528],[37.01932,-122.04496],[37.01960,-122.04466],[37.01963,-122.04461],[37.01963,-122.04443],[37.01961,-122.04434],[37.01951,-122.04426],[37.01927,-122.04424],[37.01922,-122.04420],[37.01911,-122.04415],[37.01880,-122.04403],[37.01875,-122.04389],[37.01870,-122.04384],[37.01865,-122.04383],[37.01874,-122.04371],[37.01876,-122.04358],[37.01881,-122.04359],[37.01886,-122.04358],[37.01891,-122.04353],[37.01917,-122.04340],[37.01965,-122.04327],[37.01994,-122.04331],[37.02021,-122.04340],[37.02038,-122.04340],[37.02051,-122.04345],[37.02071,-122.04349],[37.02074,-122.04353],[37.02091,-122.04358],[37.02112,-122.04354],[37.02164,-122.04335],[37.02169,-122.04323],[37.02180,-122.04313],[37.02213,-122.04299],[37.02237,-122.04294],[37.02263,-122.04290],[37.02275,-122.04290],[37.02282,-122.04294],[37.02321,-122.04281],[37.02325,-122.04277],[37.02352,-122.04273],[37.02364,-122.04268],[37.02373,-122.04268],[37.02382,-122.04268],[37.02399,-122.04277],[37.02424,-122.04286],[37.02469,-122.04294],[37.02474,-122.04295],[37.02481,-122.04305],[37.02489,-122.04313],[37.02509,-122.04326],[37.02541,-122.04366],[37.02551,-122.04375],[37.02554,-122.04374],[37.02578,-122.04389],[37.02588,-122.04390],[37.02599,-122.04389],[37.02610,-122.04394],[37.02611,-122.04399],[37.02616,-122.04411],[37.02628,-122.04425],[37.02655,-122.04443],[37.02667,-122.04456],[37.02668,-122.04470],[37.02666,-122.04487],[37.02661,-122.04497],[37.02650,-122.04506],[37.02610,-122.04527],[37.02601,-122.04541],[37.02598,-122.04541],[37.02583,-122.04559],[37.02582,-122.04565],[37.02586,-122.04577],[37.02606,-122.04588],[37.02586,-122.04577],[37.02582,-122.04565],[37.02583,-122.04559],[37.02598,-122.04541],[37.02601,-122.04541],[37.02610,-122.04527],[37.02650,-122.04506],[37.02661,-122.04497],[37.02666,-122.04487],[37.02668,-122.04470],[37.02667,-122.04456],[37.02655,-122.04443],[37.02628,-122.04425],[37.02616,-122.04411],[37.02611,-122.04399],[37.02610,-122.04394],[37.02599,-122.04389],[37.02588,-122.04390],[37.02578,-122.04389],[37.02554,-122.04374],[37.02551,-122.04375],[37.02541,-122.04366],[37.02509,-122.04326],[37.02488,-122.04313],[37.02474,-122.04295],[37.02469,-122.04294],[37.02424,-122.04286],[37.02399,-122.04277],[37.02382,-122.04268],[37.02373,-122.04268],[37.02364,-122.04268],[37.02352,-122.04273],[37.02325,-122.04277],[37.02321,-122.04281],[37.02282,-122.04294],[37.02275,-122.04290],[37.02263,-122.04290],[37.02237,-122.04294],[37.02213,-122.04299],[37.02180,-122.04313],[37.02169,-122.04323],[37.02164,-122.04335],[37.02112,-122.04354],[37.02091,-122.04358],[37.02074,-122.04353],[37.02071,-122.04349],[37.02051,-122.04345],[37.02038,-122.04340],[37.02021,-122.04340],[37.01994,-122.04331],[37.01965,-122.04327],[37.01917,-122.04340],[37.01891,-122.04353],[37.01886,-122.04358],[37.01881,-122.04359],[37.01876,-122.04358],[37.01874,-122.04371],[37.01865,-122.04383],[37.01870,-122.04384],[37.01875,-122.04389],[37.01880,-122.04403],[37.01911,-122.04415],[37.01922,-122.04420],[37.01927,-122.04424],[37.01951,-122.04426],[37.01961,-122.04434],[37.01963,-122.04443],[37.01963,-122.04461],[37.01960,-122.04466],[37.01932,-122.04496],[37.01916,-122.04528],[37.01911,-122.04545],[37.01915,-122.04564],[37.01921,-122.04574],[37.01922,-122.04585],[37.01930,-122.04595],[37.01953,-122.04604],[37.01985,-122.04621],[37.01991,-122.04621],[37.02024,-122.04635],[37.02049,-122.04641],[37.02069,-122.04653],[37.02083,-122.04668],[37.02108,-122.04689],[37.02133,-122.04716],[37.02168,-122.04743],[37.02180,-122.04757],[37.02212,-122.04815],[37.02231,-122.04828],[37.02244,-122.04832],[37.02258,-122.04832],[37.02268,-122.04837],[37.02271,-122.04842],[37.02276,-122.04855],[37.02278,-122.04885],[37.02283,-122.04904],[37.02283,-122.04923],[37.02279,-122.04932],[37.02277,-122.04948],[37.02279,-122.04958],[37.02277,-122.04962],[37.02294,-122.04985],[37.02304,-122.05007],[37.02304,-122.05016],[37.02308,-122.05038],[37.02304,-122.05087],[37.02307,-122.05101],[37.02314,-122.05182],[37.02320,-122.05204],[37.02334,-122.05223],[37.02338,-122.05240],[37.02342,-122.05244],[37.02349,-122.05272],[37.02356,-122.05281],[37.02357,-122.05289],[37.02371,-122.05307],[37.02381,-122.05315],[37.02424,-122.05317],[37.02461,-122.05311],[37.02511,-122.05308],[37.02539,-122.05303],[37.02558,-122.05302],[37.02578,-122.05311],[37.02632,-122.05338],[37.02647,-122.05343],[37.02657,-122.05343],[37.02670,-122.05334],[37.02689,-122.05316],[37.02727,-122.05254],[37.02749,-122.05226],[37.02758,-122.05217],[37.02798,-122.05203],[37.02804,-122.05195],[37.02856,-122.05114],[37.02865,-122.05105],[37.02872,-122.05102],[37.02877,-122.05102],[37.02888,-122.05110],[37.02918,-122.05141],[37.02938,-122.05151],[37.02966,-122.05172],[37.02974,-122.05186],[37.02979,-122.05199],[37.02983,-122.05221],[37.02989,-122.05299],[37.02998,-122.05332],[37.03006,-122.05383],[37.03012,-122.05396],[37.03025,-122.05414],[37.03074,-122.05445],[37.03081,-122.05450],[37.03111,-122.05496],[37.03124,-122.05508],[37.03157,-122.05526],[37.03178,-122.05553],[37.03193,-122.05566],[37.03246,-122.05656],[37.03277,-122.05695],[37.03308,-122.05724],[37.03346,-122.05756],[37.03384,-122.05789],[37.03414,-122.05818],[37.03454,-122.05831],[37.03485,-122.05844],[37.03498,-122.05868],[37.03515,-122.05871],[37.03539,-122.05862],[37.03551,-122.05875],[37.03571,-122.05884],[37.03580,-122.05893],[37.03600,-122.05880],[37.03628,-122.05848],[37.03650,-122.05851],[37.03668,-122.05866],[37.03679,-122.05867],[37.03678,-122.05867],[37.03681,-122.05867],[37.03691,-122.05862],[37.03696,-122.05854],[37.03702,-122.05851],[37.03703,-122.05846],[37.03702,-122.05851],[37.03706,-122.05863],[37.03710,-122.05867],[37.03739,-122.05875],[37.03759,-122.05875],[37.03773,-122.05879],[37.03795,-122.05889],[37.03823,-122.05926],[37.03826,-122.05942],[37.03833,-122.05947],[37.03838,-122.05942],[37.03843,-122.05942],[37.03847,-122.05948],[37.03855,-122.05956],[37.03873,-122.05956],[37.03880,-122.05965],[37.03881,-122.05978],[37.03890,-122.05984],[37.03899,-122.06010],[37.03909,-122.06029],[37.03922,-122.06041],[37.03940,-122.06038],[37.03949,-122.06053],[37.03957,-122.06054],[37.03973,-122.06086],[37.03982,-122.06120],[37.03994,-122.06123],[37.04003,-122.06130],[37.04023,-122.06148],[37.04042,-122.06164],[37.04041,-122.06164],[37.04049,-122.06170]],
+
+  // Elevation in metres, parallel to track[]. Drives the elevation profile.
+  ele: [89.1,89.6,90.4,90.5,89.1,88.7,87.3,86.5,85.0,85.0,85.1,84.3,83.8,83.5,83.1,82.2,82.2,81.1,80.6,79.8,77.0,77.8,76.1,74.8,74.8,74.7,74.0,73.9,74.2,74.3,74.3,74.4,74.4,74.6,74.5,73.9,74.3,74.4,74.7,75.4,75.2,75.2,75.3,76.1,76.3,75.7,75.2,75.4,75.6,74.4,74.4,74.4,74.5,76.5,77.7,76.7,76.6,76.5,76.3,76.8,82.2,82.3,83.8,88.3,89.8,90.3,94.6,97.0,101.1,107.2,111.7,112.8,113.2,114.1,115.4,123.1,125.1,129.8,135.7,135.7,139.9,141.9,145.6,145.6,156.7,159.1,160.9,167.2,170.9,172.8,175.2,177.3,178.8,181.7,183.4,189.6,189.6,189.5,188.2,187.0,187.0,187.0,186.5,186.2,185.8,184.9,183.4,182.4,181.8,181.6,181.5,182.0,182.5,183.2,183.9,183.9,183.9,183.7,182.7,182.3,181.3,180.7,180.0,177.8,177.0,176.3,175.4,175.2,175.2,175.3,176.0,176.1,176.0,175.2,172.7,172.7,172.1,172.2,172.9,175.0,176.3,177.0,176.8,176.8,176.8,176.8,177.0,177.0,175.9,175.7,175.8,176.6,177.7,178.0,177.4,175.8,171.8,171.8,167.1,166.4,165.9,165.5,165.3,165.2,165.3,165.6,166.0,166.0,166.1,166.2,166.4,167.0,167.0,167.0,167.2,167.3,167.5,167.5,168.3,168.9,168.9,170.8,170.8,174.4,181.5,182.6,183.0,183.4,184.2,186.0,186.0,188.1,191.1,200.3,201.3,202.1,204.6,205.4,205.8,205.9,206.0,207.1,207.1,208.2,208.6,209.9,210.1,210.6,210.1,207.6,207.5,207.4,207.5,208.2,213.2,213.2,213.2,216.5,216.8,217.9,218.9,219.8,220.3,223.1,228.3,229.5,230.4,230.8,233.5,233.5,234.9,235.5,235.5,237.4,238.5,239.8,243.0,239.8,238.5,237.4,235.5,235.5,234.9,233.5,233.5,230.8,230.4,229.5,228.3,223.1,220.8,219.8,218.9,217.9,216.8,216.8,213.2,213.2,213.2,208.5,207.5,207.5,207.8,210.3,210.6,209.9,209.9,208.6,208.2,207.1,207.1,205.9,205.9,205.8,205.2,204.6,202.1,200.8,199.7,191.1,188.1,186.0,185.6,184.2,183.4,182.9,182.6,181.1,174.4,170.8,168.9,168.9,168.9,168.1,167.5,167.3,167.3,167.2,167.0,167.0,167.0,166.2,166.1,166.1,166.0,166.0,165.6,165.2,165.2,165.3,165.5,165.9,166.4,170.1,171.8,171.8,175.8,177.7,178.0,177.7,176.3,175.8,175.7,175.9,177.0,177.0,176.8,176.8,176.8,176.8,177.0,176.3,175.0,172.9,172.2,172.1,172.7,173.1,175.2,176.1,176.1,176.0,175.3,175.2,175.2,175.4,176.3,177.8,177.8,180.4,181.0,181.3,182.3,182.7,183.7,183.9,183.5,182.8,182.7,182.4,178.8,176.0,176.0,174.9,170.8,162.2,156.0,155.1,151.6,148.5,137.8,134.1,132.4,132.4,132.4,123.4,121.0,116.8,115.4,112.6,110.6,104.6,106.1,109.2,109.1,108.1,102.8,102.5,100.7,99.3,96.2,91.5,91.0,80.6,74.7,73.9,75.2,75.4,75.2,78.1,78.8,78.9,79.5,80.5,81.0,81.6,82.0,83.6,87.3,90.9,92.8,93.3,93.3,93.3,93.7,93.9,93.9,93.9,93.9,93.7,93.7,93.3,92.7,92.1,90.9,88.6,88.9,89.3,89.3,90.2,90.2,90.7,91.4,91.7,91.7,91.6,89.7,89.2,88.6,88.2,88.0,88.0,87.8,88.0,89.2,87.6,89.7,90.1,90.1,89.9],
+
+  stats: { gain: 276.5 },
+
+  // Optional: other park trails for context. Same [lat,lon] format.
+  // Each entry is one trail line. Leave empty to skip.
+  trails: [
+    // { name:"Pipeline Road", path:[[37.0411,-122.0655],[37.0425,-122.0648]] }
+  ],
+
+  // Trail name labels. `at` is where the text sits.
+  // `to` is optional — draws a leader arrow from the text to that point.
+  trailNames: [
+    // { text:"PIPELINE ROAD", at:[37.0418,-122.0651], rotate:-18, to:[37.0421,-122.0644] }
+  ],
+
+  // All point features. type drives the symbol.
+  // types: start | finish | startfinish | water | volunteer | music | bigfoot | medical | restroom | parking
+  // Emoji used for point features. Swap any of these in one place.
+  symbols: {
+    water:   "\u{1F4A7}",   // droplet
+    music:   "\u{1F3B5}",   // musical note
+    bigfoot: "\u{1F463}",   // footprints — the U+1FAC8 "hairy creature" glyph
+                            // is too new and renders as a hollow box
+    medical: "\u{1F691}",
+    restroom:"\u{1F6BB}",
+    parking: "\u{1F17F}"
+  },
+
+  markers: [
+    { type:"water", at:[37.033704,-122.057780], num:1, label:"Water 1" },
+    { type:"water", at:[37.024687,-122.053276], num:2, label:"Water 2" },
+    // { type:"volunteer", at:[37.0000,-122.0000], num:1, label:"Post 1", note:"Keep runners left" },
+    // { type:"music",     at:[37.0000,-122.0000], label:"Fiddle duo" },
+    // { type:"bigfoot",   at:[37.0000,-122.0000], label:"Bigfoot" },
+  ],
+
+  // Mile markers are generated automatically from the track.
+  mileMarkers: { show:true, unit:"mi" },
+
+  // Direction arrows spaced evenly along the route.
+  directionArrows: { count: 14 },
+
+  // Printed on the volunteer sheet under the map. Keep it short and true.
+  brief: {
+    columns: [
+      { head:"Radio",        lines:["Channel 3, sub-channel 2","Test at 06:45 from your post"] },
+      { head:"Course lead",  lines:["Name — (831) 000-0000"] },
+      { head:"First aid",    lines:["Start/finish tent, west side","Call 911 first, then course lead"] },
+      { head:"No cell service", lines:["Ox Trail ridge","Upper Pipeline north of the trestle"] }
+    ],
+    footer:""
+  }
+};
+
+/* ==============================================================
+   ENGINE — you generally don't need to edit below here.
+   ============================================================== */
+
+const SVGNS = "http://www.w3.org/2000/svg";
+const map   = document.getElementById("map");
+const sheet = document.getElementById("sheet");
+const R_EARTH = 6378137;
+
+let PAGE = { w:8.5, h:11 };
+let VB   = { w:1000, h:1176 };
+let PROJ = null;
+let TRACK = [];
+
+/* ---------- projection ---------- */
+function merc(lat, lon){
+  return {
+    x: lon * Math.PI/180,
+    y: Math.log(Math.tan(Math.PI/4 + (lat*Math.PI/180)/2))
+  };
+}
+function unmerc(x, y){
+  return {
+    lat: (2*Math.atan(Math.exp(y)) - Math.PI/2) * 180/Math.PI,
+    lon: x * 180/Math.PI
+  };
+}
+
+function buildProjection(track){
+  if(!track.length) return null;
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity,latSum=0;
+  for(const [lat,lon] of track){
+    const p = merc(lat,lon);
+    minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x);
+    minY=Math.min(minY,p.y); maxY=Math.max(maxY,p.y);
+    latSum += lat;
+  }
+  const latMean = latSum/track.length;
+
+  // Margins in viewBox units. Extra room at top for the title block,
+  // extra at the bottom for legend + brief panel.
+  const mL=70, mR=70, mT=VB.h*0.115, mB=VB.h*(DATA.brief ? 0.235 : 0.14);
+  const availW = VB.w - mL - mR;
+  const availH = VB.h - mT - mB;
+
+  const dx = (maxX-minX) || 1e-9;
+  const dy = (maxY-minY) || 1e-9;
+  const scale = Math.min(availW/dx, availH/dy);
+
+  const offX = mL + (availW - dx*scale)/2 - minX*scale;
+  const offY = mT + (availH - dy*scale)/2 + maxY*scale;
+
+  const toXY = (lat,lon)=>{ const p=merc(lat,lon); return [p.x*scale+offX, offY-p.y*scale]; };
+  const toLatLon = (X,Y)=> unmerc((X-offX)/scale, (offY-Y)/scale);
+  // ground metres per viewBox unit, at the track's mean latitude
+  const mPerUnit = (R_EARTH * Math.cos(latMean*Math.PI/180)) / scale;
+
+  return { toXY, toLatLon, mPerUnit, latMean };
+}
+
+function haversine(a,b){
+  const [la1,lo1]=a,[la2,lo2]=b;
+  const dLa=(la2-la1)*Math.PI/180, dLo=(lo2-lo1)*Math.PI/180;
+  const s=Math.sin(dLa/2)**2 + Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)**2;
+  return 2*R_EARTH*Math.asin(Math.sqrt(s));
+}
+
+/* Douglas-Peucker on projected points, keeps files small and lines crisp */
+function simplify(pts, tol){
+  if(pts.length<3) return pts;
+  const keep = new Array(pts.length).fill(false);
+  keep[0]=keep[pts.length-1]=true;
+  const stack=[[0,pts.length-1]];
+  while(stack.length){
+    const [s,e]=stack.pop();
+    let maxD=0,idx=-1;
+    const [x1,y1]=pts[s],[x2,y2]=pts[e];
+    const dx=x2-x1, dy=y2-y1, len=Math.hypot(dx,dy)||1e-9;
+    for(let i=s+1;i<e;i++){
+      const [px,py]=pts[i];
+      const d=Math.abs(dy*px - dx*py + x2*y1 - y2*x1)/len;
+      if(d>maxD){maxD=d;idx=i;}
+    }
+    if(maxD>tol && idx>0){ keep[idx]=true; stack.push([s,idx],[idx,e]); }
+  }
+  return pts.filter((_,i)=>keep[i]);
+}
+
+/* ---------- svg helpers ---------- */
+function el(tag, attrs={}, parent=null){
+  const n=document.createElementNS(SVGNS,tag);
+  for(const k in attrs) n.setAttribute(k, attrs[k]);
+  if(parent) parent.appendChild(n);
+  return n;
+}
+function txt(parent, x, y, s, attrs={}){
+  const t=el("text",Object.assign({x,y},attrs),parent);
+  t.textContent=s; return t;
+}
+function group(parent, cls){ return el("g",{class:cls},parent); }
+
+/* ---------- symbols ---------- */
+const SYMBOL = {
+  water:     { fill:"var(--water)",   glyph:"W",  shape:"square" },
+  volunteer: { fill:"var(--vol)",     glyph:null, shape:"circle" },
+  music:     { fill:"var(--music)",   glyph:"♫", shape:"diamond" },
+  bigfoot:   { fill:"var(--bigfoot)", glyph:"BF", shape:"pentagon" },
+  medical:   { fill:"#a11d1d",        glyph:"+",  shape:"square" },
+  restroom:  { fill:"#555",           glyph:"R",  shape:"square" },
+  parking:   { fill:"#555",           glyph:"P",  shape:"square" }
+};
+
+let SYMBOL_STYLE = "emoji";   // "emoji" | "shapes"
+
+const EMOJI_FONT = 'AppleColorEmoji,"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+
+function drawSymbol(g, x, y, type, num){
+  const emoji = DATA.symbols?.[type];
+
+  // Emoji features sit bare on the map — no plate, no border.
+  if(SYMBOL_STYLE==="emoji" && emoji && type!=="volunteer"){
+    txt(g,x,y,emoji,{
+      "text-anchor":"middle","dominant-baseline":"central",
+      "font-family":EMOJI_FONT,"font-size":30, class:"emoji-mark"
+    });
+    return;
+  }
+
+  const spec = SYMBOL[type] || SYMBOL.volunteer;
+  const r = 13;
+  let node;
+  if(spec.shape==="circle"){
+    node = el("circle",{cx:x,cy:y,r:r},g);
+  } else if(spec.shape==="square"){
+    node = el("rect",{x:x-r,y:y-r,width:r*2,height:r*2,rx:2.5},g);
+  } else if(spec.shape==="diamond"){
+    node = el("polygon",{points:`${x},${y-r*1.25} ${x+r*1.25},${y} ${x},${y+r*1.25} ${x-r*1.25},${y}`},g);
+  } else {
+    const pts=[];
+    for(let i=0;i<5;i++){
+      const a=-Math.PI/2 + i*2*Math.PI/5;
+      pts.push(`${(x+Math.cos(a)*r*1.2).toFixed(1)},${(y+Math.sin(a)*r*1.2).toFixed(1)}`);
+    }
+    node = el("polygon",{points:pts.join(" ")},g);
+  }
+  node.setAttribute("class","marker-fill");
+  node.setAttribute("fill","#ffffff");
+  node.setAttribute("stroke",spec.fill);
+  node.setAttribute("stroke-width","3.2");
+
+  const label = num!=null ? String(num) : (spec.glyph||"");
+  if(label){
+    txt(g,x,y,label,{
+      "text-anchor":"middle","dominant-baseline":"central",
+      "font-family":"Barlow Semi Condensed, Arial, sans-serif",
+      "font-size": label.length>1 ? 12 : 15,
+      "font-weight":700, fill:spec.fill
+    });
+  }
+}
+
+/* ---------- render ---------- */
+function render(){
+  map.innerHTML="";
+  map.setAttribute("viewBox",`0 0 ${VB.w} ${VB.h}`);
+  map.setAttribute("preserveAspectRatio","xMidYMid meet");
+
+  // defs
+  const defs = el("defs",{},map);
+  const mk = el("marker",{id:"arrowhead",viewBox:"0 0 10 10",refX:8,refY:5,
+    markerWidth:5,markerHeight:5,orient:"auto-start-reverse"},defs);
+  el("path",{d:"M0,0 L10,5 L0,10 z",fill:"var(--route)"},mk);
+
+  el("rect",{x:0,y:0,width:VB.w,height:VB.h,fill:"var(--paper)"},map);
+
+  // A dropped .gpx overrides the baked-in course; otherwise use DATA.track.
+  if(!TRACK.length && DATA.track?.length) TRACK = DATA.track;
+  PROJ  = buildProjection(TRACK);
+
+  if(!PROJ){
+    txt(map, VB.w/2, VB.h/2 - 20, "No course track loaded",{
+      "text-anchor":"middle","font-family":"Anton, Impact, sans-serif",
+      "font-size":34,fill:"#c4c4c4"});
+    txt(map, VB.w/2, VB.h/2 + 14, "Drop your Strava .gpx into the sidebar to begin.",{
+      "text-anchor":"middle","font-family":"Barlow Semi Condensed, Arial, sans-serif",
+      "font-size":18,fill:"#c4c4c4"});
+    return;
+  }
+
+  drawOtherTrails();
+  const proj = drawRoute();
+  drawDirectionArrows(proj);
+  drawTrailNames();
+  drawMileMarkers();
+  drawMarkers();
+  drawTitle();
+  drawCompass();
+  drawScaleBar();
+  drawLegend();
+  drawBrief();
+  drawElevation();
+}
+
+function drawOtherTrails(){
+  const g = group(map,"layer-trails");
+  for(const t of (DATA.trails||[])){
+    if(!t.path || t.path.length<2) continue;
+    const d = t.path.map(([la,lo],i)=>{
+      const [x,y]=PROJ.toXY(la,lo); return (i?"L":"M")+x.toFixed(1)+","+y.toFixed(1);
+    }).join(" ");
+    el("path",{d,fill:"none",stroke:"var(--trail)","stroke-width":2.2,
+      "stroke-dasharray":"7 5","stroke-linecap":"round"},g);
+  }
+}
+
+function drawRoute(){
+  const g = group(map,"layer-route");
+  let pts = TRACK.map(([la,lo])=>PROJ.toXY(la,lo));
+  pts = simplify(pts, 0.9);
+  const d = pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");
+
+  // white casing under a dark line — keeps the route readable over trails
+  el("path",{d,fill:"none",stroke:"var(--route-casing)","stroke-width":11.5,
+    "stroke-linejoin":"round","stroke-linecap":"round"},g);
+  el("path",{d,fill:"none",stroke:"var(--route)","stroke-width":6,
+    "stroke-linejoin":"round","stroke-linecap":"round"},g);
+
+  drawTermini(pts);
+  return pts;
+}
+
+function drawTermini(pts){
+  const g = group(map,"layer-terminus");
+  const explicit = (DATA.markers||[]).some(m=>/start|finish/.test(m.type||""));
+  if(explicit) return; // user placed their own
+  const [sx,sy]=pts[0], [ex,ey]=pts[pts.length-1];
+  const gap = Math.hypot(ex-sx, ey-sy);
+  if(gap < 22){
+    checkerFlag(g, sx, sy, "START / FINISH");
+  }else{
+    // Roaring Camp start and finish are ~105 m apart. Push the labels to
+    // opposite sides so they don't collide at this scale.
+    checkerFlag(g, sx, sy, "START",  gap < 90 ? "above" : "auto");
+    checkerFlag(g, ex, ey, "FINISH", gap < 90 ? "below" : "auto");
+  }
+}
+
+function checkerFlag(g,x,y,label,side){
+  const s=7;
+  el("rect",{x:x-s*1.5,y:y-s*1.5,width:s*3,height:s*3,fill:"#fff",
+    stroke:"var(--route)","stroke-width":3},g);
+  for(let r=0;r<3;r++) for(let c=0;c<3;c++){
+    if((r+c)%2===0) el("rect",{x:x-s*1.5+c*s,y:y-s*1.5+r*s,width:s,height:s,fill:"var(--route)"},g);
+  }
+  const below = side==="below";
+  txt(g, x, below ? y+s*3.4 : y-s*2.4, label,{
+    "text-anchor":"middle","font-size":15,"font-weight":700,
+    "font-family":"Barlow Semi Condensed, Arial, sans-serif",
+    "letter-spacing":"0.06em",fill:"var(--route)",class:"halo"});
+}
+
+function drawDirectionArrows(pts){
+  const g = group(map,"layer-arrows");
+  const n = (DATA.directionArrows?.count)||12;
+  // cumulative length along the projected polyline
+  const cum=[0];
+  for(let i=1;i<pts.length;i++)
+    cum.push(cum[i-1]+Math.hypot(pts[i][0]-pts[i-1][0], pts[i][1]-pts[i-1][1]));
+  const total=cum[cum.length-1];
+
+  for(let k=1;k<=n;k++){
+    const target = total*(k-0.5)/n;
+    let i=1; while(i<cum.length-1 && cum[i]<target) i++;
+    const [x1,y1]=pts[i-1], [x2,y2]=pts[i];
+    const ang = Math.atan2(y2-y1, x2-x1)*180/Math.PI;
+    const t = (target-cum[i-1])/((cum[i]-cum[i-1])||1);
+    const x = x1+(x2-x1)*t, y = y1+(y2-y1)*t;
+    const a = el("g",{transform:`translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${ang.toFixed(1)})`},g);
+    el("polygon",{points:"-6,-6.5 8.5,0 -6,6.5",fill:"#fff",
+      stroke:"var(--route)","stroke-width":2.6,"stroke-linejoin":"round"},a);
+  }
+}
+
+function drawTrailNames(){
+  const g = group(map,"layer-trailname");
+  for(const t of (DATA.trailNames||[])){
+    const [x,y]=PROJ.toXY(t.at[0],t.at[1]);
+    if(t.to){
+      const [tx,ty]=PROJ.toXY(t.to[0],t.to[1]);
+      el("line",{x1:x,y1:y,x2:tx,y2:ty,stroke:"var(--ink)","stroke-width":1.6,
+        "marker-end":"url(#arrowhead)"},g);
+    }
+    txt(g,x,y,t.text,{
+      "text-anchor":"middle","font-size":14,"font-weight":600,
+      "letter-spacing":"0.1em","font-family":"Barlow Semi Condensed, Arial, sans-serif",
+      fill:"var(--ink)", class:"halo",
+      transform: t.rotate ? `rotate(${t.rotate} ${x} ${y})` : null
+    });
+  }
+}
+
+function drawMileMarkers(){
+  const g = group(map,"layer-mile");
+  if(!DATA.mileMarkers?.show || TRACK.length<2) return;
+  const step = 1609.344;
+  let dist=0, next=step;
+  for(let i=1;i<TRACK.length;i++){
+    const seg = haversine(TRACK[i-1],TRACK[i]);
+    while(dist+seg >= next){
+      const t=(next-dist)/(seg||1);
+      const lat = TRACK[i-1][0]+(TRACK[i][0]-TRACK[i-1][0])*t;
+      const lon = TRACK[i-1][1]+(TRACK[i][1]-TRACK[i-1][1])*t;
+      const [x,y]=PROJ.toXY(lat,lon);
+      el("rect",{x:x-10,y:y-10,width:20,height:20,rx:3,fill:"#fff",
+        stroke:"var(--ink)","stroke-width":2.4},g);
+      txt(g,x,y,String(Math.round(next/step)),{
+        "text-anchor":"middle","dominant-baseline":"central","font-size":13,
+        "font-weight":700,"font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"var(--ink)"});
+      next += step;
+    }
+    dist += seg;
+  }
+}
+
+function drawMarkers(){
+  const groups = {
+    water:group(map,"layer-water"), volunteer:group(map,"layer-vol"),
+    music:group(map,"layer-music"), bigfoot:group(map,"layer-bigfoot"),
+    other:group(map,"layer-terminus")
+  };
+  let autoNum = 0;
+  for(const m of (DATA.markers||[])){
+    if(!m.at) continue;
+    const [x,y]=PROJ.toXY(m.at[0],m.at[1]);
+    const type=m.type||"volunteer";
+    const g = groups[type] || groups.other;
+
+    if(/start|finish/.test(type)){
+      checkerFlag(g,x,y,m.label||type.toUpperCase());
+      continue;
+    }
+    const num = type==="volunteer" ? (m.num ?? ++autoNum) : null;
+    drawSymbol(g,x,y,type,num);
+
+    if(m.label){
+      const t=txt(g,x+19,y-3,m.label,{
+        "font-size":14,"font-weight":600,"font-family":"Barlow Semi Condensed, Arial, sans-serif",
+        fill:"var(--ink)",class:"halo marker-label"});
+      if(m.note){
+        txt(g,x+19,y+12,m.note,{
+          "font-size":11.5,"font-family":"Barlow Semi Condensed, Arial, sans-serif",
+          fill:"#4a4a4a",class:"halo marker-label"});
+      }
+    }
+  }
+}
+
+function drawTitle(){
+  const g = group(map,"layer-title");
+  const pad=70, y=VB.h*0.052;
+  txt(g,pad,y,DATA.meta.title.toUpperCase(),{
+    class:"map-title","font-size":VB.w*0.036,"dominant-baseline":"auto"});
+  txt(g,pad,y+VB.w*0.026,DATA.meta.subtitle,{
+    "font-size":VB.w*0.019,"font-family":"Barlow Semi Condensed, Arial, sans-serif",
+    "font-weight":500,fill:"#3a3a3a"});
+  txt(g,VB.w-pad,y,DATA.meta.date,{
+    "text-anchor":"end","font-size":VB.w*0.019,"font-weight":600,
+    "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"var(--accent)"});
+  if(DATA.meta.sheetNote){
+    txt(g,VB.w-pad,y+VB.w*0.021,DATA.meta.sheetNote,{
+      "text-anchor":"end","font-size":VB.w*0.0125,
+      "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"#6a6a6a"});
+  }
+  el("line",{x1:pad,y1:y+VB.w*0.036,x2:VB.w-pad,y2:y+VB.w*0.036,
+    stroke:"var(--ink)","stroke-width":2},g);
+}
+
+function drawCompass(){
+  const g = group(map,"layer-compass");
+  const x=VB.w-100, y=VB.h*0.155, r=22;
+  el("circle",{cx:x,cy:y,r:r,fill:"#fff",stroke:"var(--ink)","stroke-width":1.6},g);
+  el("polygon",{points:`${x},${y-r+3} ${x-7},${y+8} ${x},${y+3} ${x+7},${y+8}`,
+    fill:"var(--ink)"},g);
+  txt(g,x,y+r+14,"N",{"text-anchor":"middle","font-size":15,"font-weight":700,
+    "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"var(--ink)"});
+}
+
+function drawScaleBar(){
+  const g = group(map,"layer-scale");
+  const yBase = VB.h - (DATA.brief ? VB.h*0.20 : VB.h*0.055);
+  // choose a round distance close to 120 viewBox units
+  const targetM = 120 * PROJ.mPerUnit;
+  const nice = [100,200,250,400,500,800,1000,1600,2000,3200,5000];
+  const m = nice.reduce((a,b)=>Math.abs(b-targetM)<Math.abs(a-targetM)?b:a);
+  const w = m / PROJ.mPerUnit;
+  const x0 = VB.w - 70 - w;   // right-aligned; legend now holds the left
+  const h = 7;
+  for(let i=0;i<4;i++){
+    el("rect",{x:x0+i*w/4,y:yBase,width:w/4,height:h,
+      fill:i%2?"#fff":"var(--ink)",stroke:"var(--ink)","stroke-width":1},g);
+  }
+  const miles = (m/1609.344);
+  const label = miles>=0.95 ? `${miles.toFixed(1)} mi` : `${Math.round(m*3.28084)} ft`;
+  txt(g,x0,yBase-6,label,{"font-size":12.5,"font-weight":600,
+    "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"var(--ink)"});
+  txt(g,VB.w-70,yBase-6,`${m>=1000?(m/1000)+" km":m+" m"}`,{"text-anchor":"end","font-size":11,
+    "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"#6a6a6a"});
+}
+
+function drawLegend(){
+  const g = group(map,"layer-legend");
+  const items = [
+    {type:"route",     text:"Race route (10K)"},
+    {type:"arrow",     text:"Direction of travel"},
+    {type:"volunteer", text:"Volunteer post (numbered)"},
+    {type:"water",     text:"Water station"},
+    {type:"music",     text:"Musician"},
+    {type:"bigfoot",   text:"Bigfoot"},
+    {type:"mile",      text:"Mile marker"},
+    {type:"trail",     text:"Other park trail"}
+  ];
+  // Bottom-left: verified clear of the route for this course.
+  const x0 = 84, y0 = VB.h - (DATA.brief ? VB.h*0.205 : VB.h*0.055) - items.length*23 - 14;
+  el("rect",{x:x0-14,y:y0-24,width:250,height:items.length*23+34,
+    fill:"#fff",stroke:"var(--hair)","stroke-width":1.4,rx:3},g);
+  txt(g,x0,y0-8,"LEGEND",{"font-size":11.5,"font-weight":700,"letter-spacing":"0.16em",
+    "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"#6a6a6a"});
+
+  items.forEach((it,i)=>{
+    const y = y0 + 16 + i*23, x = x0+13;
+    if(it.type==="route"){
+      el("line",{x1:x-11,y1:y,x2:x+11,y2:y,stroke:"var(--route)","stroke-width":6,
+        "stroke-linecap":"round"},g);
+    } else if(it.type==="trail"){
+      el("line",{x1:x-11,y1:y,x2:x+11,y2:y,stroke:"var(--trail)","stroke-width":2.2,
+        "stroke-dasharray":"7 5"},g);
+    } else if(it.type==="arrow"){
+      el("polygon",{points:`${x-5},${y-5} ${x+8},${y} ${x-5},${y+5}`,fill:"#fff",
+        stroke:"var(--route)","stroke-width":2.4,"stroke-linejoin":"round"},g);
+    } else if(it.type==="mile"){
+      el("rect",{x:x-9,y:y-9,width:18,height:18,rx:3,fill:"#fff",
+        stroke:"var(--ink)","stroke-width":2.2},g);
+      txt(g,x,y,"3",{"text-anchor":"middle","dominant-baseline":"central","font-size":12,
+        "font-weight":700,"font-family":"Barlow Semi Condensed, Arial, sans-serif"});
+    } else if(SYMBOL_STYLE==="emoji" && DATA.symbols?.[it.type] && it.type!=="volunteer"){
+      txt(g,x,y,DATA.symbols[it.type],{"text-anchor":"middle","dominant-baseline":"central",
+        "font-family":EMOJI_FONT,"font-size":22});
+    } else {
+      drawSymbol(g,x,y,it.type,it.type==="volunteer"?7:null);
+    }
+    txt(g,x0+38,y,it.text,{"dominant-baseline":"central","font-size":14,
+      "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"var(--ink)"});
+  });
+}
+
+function drawBrief(){
+  if(!DATA.brief) return;
+  const g = group(map,"layer-brief");
+  const pad=70;
+  const top = VB.h - VB.h*0.175;
+  el("line",{x1:pad,y1:top-16,x2:VB.w-pad,y2:top-16,stroke:"var(--ink)","stroke-width":2},g);
+
+  const cols = DATA.brief.columns||[];
+  const colW = (VB.w-pad*2)/Math.max(cols.length,1);
+  cols.forEach((c,i)=>{
+    const x = pad + i*colW;
+    txt(g,x,top+6,c.head.toUpperCase(),{"font-size":11.5,"font-weight":700,
+      "letter-spacing":"0.14em","font-family":"Barlow Semi Condensed, Arial, sans-serif",
+      fill:"#6a6a6a"});
+    (c.lines||[]).forEach((ln,j)=>{
+      txt(g,x,top+26+j*17,ln,{"font-size":14,
+        "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"var(--ink)"});
+    });
+  });
+  if(DATA.brief.footer){
+    txt(g,pad,VB.h-34,DATA.brief.footer,{"font-size":13.5,"font-weight":600,
+      "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"var(--accent)"});
+  }
+}
+
+function drawElevation(){
+  const g = group(map,"layer-elev");
+  const ele = DATA.ele||[];
+  if(ele.length !== TRACK.length || ele.length<2) return;
+
+  const pad=70, top = VB.h - VB.h*0.175, h = VB.h*0.105, w = VB.w-pad*2;
+
+  // cumulative ground distance for the x axis
+  const cum=[0];
+  for(let i=1;i<TRACK.length;i++) cum.push(cum[i-1]+haversine(TRACK[i-1],TRACK[i]));
+  const total=cum[cum.length-1];
+  const lo=Math.min(...ele), hi=Math.max(...ele), span=(hi-lo)||1;
+
+  const X = i => pad + (cum[i]/total)*w;
+  const Y = i => top+h - ((ele[i]-lo)/span)*h;
+
+  let d = `M${pad},${top+h}`;
+  for(let i=0;i<ele.length;i++) d += ` L${X(i).toFixed(1)},${Y(i).toFixed(1)}`;
+  d += ` L${pad+w},${top+h} Z`;
+  el("path",{d,fill:"var(--accent)","fill-opacity":.14,
+    stroke:"var(--accent)","stroke-width":2,"stroke-linejoin":"round"},g);
+
+  el("line",{x1:pad,y1:top+h,x2:pad+w,y2:top+h,stroke:"var(--ink)","stroke-width":1.4},g);
+
+  // mile ticks along the profile
+  for(let m=1; m*1609.344 < total; m++){
+    const x = pad + (m*1609.344/total)*w;
+    el("line",{x1:x,y1:top+h,x2:x,y2:top+h+5,stroke:"var(--ink)","stroke-width":1.2},g);
+    txt(g,x,top+h+17,m+" mi",{"text-anchor":"middle","font-size":11,
+      "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"#6a6a6a"});
+  }
+
+  const ft = v => Math.round(v*3.28084);
+  txt(g,pad,top-8,"ELEVATION PROFILE",{"font-size":11.5,"font-weight":700,
+    "letter-spacing":"0.14em","font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"#6a6a6a"});
+  txt(g,pad+w,top-8,
+    `${ft(lo)}–${ft(hi)} ft · ${ft(DATA.stats?.gain||0)} ft gain · ${(total/1609.344).toFixed(2)} mi`,
+    {"text-anchor":"end","font-size":13,"font-weight":600,
+     "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"var(--ink)"});
+}
+
+/* ---------- page sizing ---------- */
+function setPage(w,h){
+  PAGE={w,h};
+  VB={w:1000, h:Math.round(1000*h/w)};
+  // fit the on-screen sheet into the viewport
+  const availH = window.innerHeight - 72;
+  const availW = window.innerWidth - 258 - 72;
+  const scale = Math.min(availW/w, availH/h);
+  sheet.style.width  = (w*scale)+"px";
+  sheet.style.height = (h*scale)+"px";
+  let ps = document.getElementById("pageStyle");
+  if(!ps){ ps=document.createElement("style"); ps.id="pageStyle"; document.head.appendChild(ps); }
+  ps.textContent = `@page { size: ${w}in ${h}in; margin: 0; }`;
+  render();
+}
+
+/* ---------- GPX parsing ---------- */
+function parseGPX(text){
+  const doc = new DOMParser().parseFromString(text,"application/xml");
+  if(doc.querySelector("parsererror")) return null;
+  let nodes = doc.getElementsByTagName("trkpt");
+  if(!nodes.length) nodes = doc.getElementsByTagName("rtept");
+  if(!nodes.length) nodes = doc.getElementsByTagName("wpt");
+  const out=[];
+  for(const n of nodes){
+    const lat=parseFloat(n.getAttribute("lat")), lon=parseFloat(n.getAttribute("lon"));
+    if(Number.isFinite(lat)&&Number.isFinite(lon)) out.push([lat,lon]);
+  }
+  return out.length ? out : null;
+}
+
+function loadTrack(pts){
+  TRACK = pts;
+  DATA.ele = [];                // baked elevation no longer matches the new track
+  let dist=0;
+  for(let i=1;i<pts.length;i++) dist += haversine(pts[i-1],pts[i]);
+  document.getElementById("trackInfo").textContent =
+    `${pts.length} points · ${(dist/1609.344).toFixed(2)} mi`;
+  render();
+}
+
+/* ---------- wiring ---------- */
+document.querySelectorAll("#controls input[data-layer]").forEach(cb=>{
+  cb.addEventListener("change",()=>{
+    map.classList.toggle("off-"+cb.dataset.layer, !cb.checked);
+  });
+});
+
+document.getElementById("pageSel").addEventListener("change",e=>{
+  const [w,h]=e.target.value.split(",").map(Number); setPage(w,h);
+});
+
+document.getElementById("symbolSel").addEventListener("change",e=>{
+  SYMBOL_STYLE = e.target.value; render();
+});
+
+document.getElementById("themeSel").addEventListener("change",e=>{
+  document.body.className = e.target.value;
+});
+
+const dz=document.getElementById("dropzone"), fi=document.getElementById("gpxFile");
+dz.addEventListener("click",()=>fi.click());
+dz.addEventListener("dragover",e=>{e.preventDefault();dz.classList.add("over")});
+dz.addEventListener("dragleave",()=>dz.classList.remove("over"));
+dz.addEventListener("drop",e=>{
+  e.preventDefault(); dz.classList.remove("over");
+  const f=e.dataTransfer.files[0]; if(f) readFile(f);
+});
+fi.addEventListener("change",e=>{ const f=e.target.files[0]; if(f) readFile(f); });
+
+function readFile(f){
+  const r=new FileReader();
+  r.onload=()=>{
+    const pts=parseGPX(r.result);
+    if(!pts){ document.getElementById("trackInfo").textContent="That file had no track points. Export the route as GPX from Strava."; return; }
+    loadTrack(pts);
+  };
+  r.readAsText(f);
+}
+
+document.getElementById("bakeBtn").addEventListener("click",()=>{
+  if(!TRACK.length){ alert("Load a .gpx first."); return; }
+  // simplify in lat/lon space so the baked array stays small
+  const proj = TRACK.map(([la,lo])=>PROJ.toXY(la,lo));
+  const keepIdx=new Set();
+  simplify(proj.map((p,i)=>[p[0],p[1],i]),0.6).forEach(p=>keepIdx.add(p[2]));
+  const kept = TRACK.filter((_,i)=>keepIdx.has(i));
+  const src = kept.map(([la,lo])=>`[${la.toFixed(6)},${lo.toFixed(6)}]`).join(",");
+  navigator.clipboard.writeText(`track: [${src}],`);
+  alert(`Copied ${kept.length} points. Paste over the "track:" line in the DATA block.`);
+});
+
+/* coordinate picker */
+const picks=[];
+const pickLog=document.getElementById("pickLog");
+document.getElementById("pickMode").addEventListener("change",e=>{
+  sheet.style.cursor = e.target.checked ? "crosshair" : "";
+});
+map.addEventListener("click",e=>{
+  if(!document.getElementById("pickMode").checked || !PROJ) return;
+  const pt=map.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY;
+  const loc=pt.matrixTransform(map.getScreenCTM().inverse());
+  const {lat,lon}=PROJ.toLatLon(loc.x,loc.y);
+  const line=`{ type:"volunteer", at:[${lat.toFixed(6)},${lon.toFixed(6)}], num:${picks.length+1}, label:"Post ${picks.length+1}" },`;
+  picks.push(line);
+  pickLog.textContent = picks.join("\n");
+  pickLog.scrollTop = pickLog.scrollHeight;
+});
+document.getElementById("copyPicks").addEventListener("click",()=>{
+  if(!picks.length) return;
+  navigator.clipboard.writeText(picks.join("\n"));
+});
+document.getElementById("clearPicks").addEventListener("click",()=>{
+  picks.length=0; pickLog.textContent="Points you click land here, formatted for the DATA block.";
+});
+
+window.addEventListener("resize",()=>setPage(PAGE.w,PAGE.h));
+
+/* ---------- output presets ---------- */
+const PRESETS = {
+  volunteer: {
+    page:[8.5,11], theme:"theme-mono", symbols:"shapes",
+    on:["route","terminus","arrows","trails","trailname","mile","water","vol",
+        "music","bigfoot","labels","title","legend","compass","scale","brief"],
+    off:["elev"]
+  },
+  poster: {
+    page:[24,36], theme:"theme-forest", symbols:"emoji",
+    on:["route","terminus","arrows","trails","trailname","mile","water","vol",
+        "music","bigfoot","labels","title","legend","compass","scale","elev"],
+    off:["brief"]
+  }
+};
+
+function applyPreset(name){
+  const p = PRESETS[name]; if(!p) return;
+  document.body.className = p.theme;
+  document.getElementById("themeSel").value = p.theme;
+  SYMBOL_STYLE = p.symbols;
+  document.getElementById("symbolSel").value = p.symbols;
+  document.getElementById("pageSel").value = p.page.join(",");
+
+  document.querySelectorAll("#controls input[data-layer]").forEach(cb=>{
+    const k = cb.dataset.layer;
+    cb.checked = p.on.includes(k);
+    map.classList.toggle("off-"+k, !cb.checked);
+  });
+  setPage(p.page[0], p.page[1]);
+}
+
+document.getElementById("presetSel").addEventListener("change",e=>applyPreset(e.target.value));
+
+/* boot */
+applyPreset("poster");
+document.getElementById("presetSel").value = "poster";
+</script>
+</body>
+</html>
