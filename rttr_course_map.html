@@ -342,10 +342,13 @@ const DATA = {
   directionArrows: { count: 14 },
 
   // Printed on the volunteer sheet under the map. Keep it short and true.
+  // Radio channel and the course-lead phone are deliberately left as blank
+  // rules: they get filled in by hand on race morning, so the printed sheet
+  // never carries a stale number.
   brief: {
     columns: [
-      { head:"Radio",        lines:["Channel 3, sub-channel 2","Test at 06:45 from your post"] },
-      { head:"Course lead",  lines:["Name — (831) 000-0000"] },
+      { head:"Radio",        lines:["Channel ______  Sub-ch ______","Radio test ______ from your post"] },
+      { head:"Course lead",  lines:["Name ________________________","Phone _______________________"] },
       { head:"First aid",    lines:["Start/finish tent, west side","Call 911 first, then course lead"] },
       { head:"No cell service", lines:["Ox Trail ridge","Upper Pipeline north of the trestle"] }
     ],
