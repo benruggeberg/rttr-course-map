@@ -257,6 +257,12 @@ def main():
                     help="csp = California State Parks' own trail layer, the "
                          "one behind the official park map (default). "
                          "osm = OpenStreetMap via Overpass")
+    ap.add_argument("--repeat", default="Pipeline Road",
+                    help="comma-separated trails to label twice. For a trail "
+                         "the course follows a long way, one label leaves a "
+                         "reader tracing the line to find out where they are")
+    ap.add_argument("--repeat-gap", type=float, default=400.0,
+                    help="minimum metres between two labels of the same trail")
     ap.add_argument("--drop", default=",".join(DEFAULT_DROP),
                     help="comma-separated trails to remove entirely, geometry "
                          "and label both")
@@ -382,10 +388,8 @@ def main():
         elif t["length"] > cur["length"]:
             by_name[key] = t
 
-    labels = []
-    # Course trails first so the collision pass hands them the best positions.
-    for name, t in sorted(by_name.items(),
-                          key=lambda kv: (kv[0].lower() not in course_names, -kv[1]["length"])):
+    def anchor(t):
+        """Label anchor and on-sheet bearing for one segment."""
         xy, ll = t["xy"], t["path"]
         mid = len(ll) // 2
         a, b = max(0, mid - 1), min(len(ll) - 1, mid + 1)
@@ -397,12 +401,32 @@ def main():
             rot -= 180
         elif rot < -90:
             rot += 180
-        labels.append({
-            "text": name.upper(),
-            "at": ll[mid],
-            "rotate": round(rot, 1),
-            "onCourse": name.lower() in course_names,
-        })
+        return ll[mid], round(rot, 1)
+
+    repeat = {n.strip().lower(): 1 for n in args.repeat.split(",") if n.strip()}
+
+    labels = []
+    # Course trails first so the collision pass hands them the best positions.
+    for name, t in sorted(by_name.items(),
+                          key=lambda kv: (kv[0].lower() not in course_names, -kv[1]["length"])):
+        at, rot = anchor(t)
+        on = name.lower() in course_names
+        labels.append({"text": name.upper(), "at": at, "rotate": rot, "onCourse": on})
+
+        # A long trail the course follows for miles reads better labelled more
+        # than once -- a reader should not have to trace the line back to find
+        # out what they are standing on.
+        if name.lower() in repeat:
+            others = [o for o in named
+                      if o["name"] == name and o is not t and o["on_course"] == t["on_course"]]
+            for o in sorted(others, key=lambda o: -o["length"]):
+                at2, rot2 = anchor(o)
+                # far enough from every label already placed for this trail
+                if all(math.dist(proj(*at2), proj(*l["at"])) > args.repeat_gap
+                       for l in labels if l["text"] == name.upper()):
+                    labels.append({"text": name.upper(), "at": at2,
+                                   "rotate": rot2, "onCourse": on})
+                    break
 
     trails_src = ",\n".join(
         "    { name:%s, path:%s }" % (

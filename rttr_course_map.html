@@ -80,7 +80,8 @@ body{
 #dropzone.over{border-color:#4ea36b; color:#9fd6b4; background:#1c241e}
 
 /* ---------- SHEET ---------- */
-#stage{margin-left:258px; padding:26px; display:flex; justify-content:center}
+#stage{margin-left:258px; padding:26px; display:flex; justify-content:center;
+       align-items:flex-start; overflow:auto; height:100vh}
 #sheet{
   background:var(--paper); box-shadow:0 2px 14px rgba(0,0,0,.22);
   position:relative; overflow:hidden;
@@ -217,6 +218,19 @@ body{
   </fieldset>
 
   <fieldset>
+    <legend>Zoom</legend>
+    <div style="display:flex; gap:6px; margin-top:6px">
+      <button id="zoomOut" style="flex:0 0 44px; text-align:center">&minus;</button>
+      <button id="zoomFit" style="text-align:center">Fit</button>
+      <button id="zoomIn"  style="flex:0 0 44px; text-align:center">+</button>
+    </div>
+    <p class="hint" id="zoomLabel">Fit to window</p>
+    <p class="hint">Browser zoom scales the whole page including this panel.
+      Use these to magnify the sheet alone, then scroll it. &#8984;/Ctrl + scroll
+      wheel over the sheet works too.</p>
+  </fieldset>
+
+  <fieldset>
     <legend>Coordinate picker</legend>
     <label><input type="checkbox" id="pickMode"> Click map to capture lat/lon</label>
     <div id="pickLog">Points you click land here, formatted for the DATA block.</div>
@@ -298,6 +312,7 @@ const DATA = {
   // `offset:[dx,dy]` pins a label by hand and exempts it from auto-placement.
   trailNames: [
     { text:"PIPELINE ROAD", at:[37.023805,-122.05311], rotate:70.6, onCourse:true },
+    { text:"PIPELINE ROAD", at:[37.0311,-122.054972], rotate:49.8, onCourse:true },
     { text:"POWDER MILL FIRE ROAD", at:[37.021882,-122.043207], rotate:-70.8, onCourse:true },
     { text:"RIVER TRAIL", at:[37.036651,-122.062368], rotate:47.2, onCourse:true },
     { text:"RIDGE FIRE ROAD", at:[37.025278,-122.054398], rotate:41.3, onCourse:true },
@@ -380,6 +395,14 @@ const DATA = {
     // { type:"bigfoot", at:[37.0000,-122.0000], label:"Bigfoot" },
   ],
 
+  // Which marker types may be displaced off the route to stay readable, and
+  // how long a label line may run before it wraps.
+  markerPlacement: {
+    displace: ["water","viewpoint","music","bigfoot"],
+    wrap: 22,
+    wrapNote: 26
+  },
+
   // Mile markers are generated automatically from the track. They are
   // deliberately understated: a volunteer needs to find their post, not their
   // split, so posts read first and the mile squares sit behind them.
@@ -429,6 +452,7 @@ const sheet = document.getElementById("sheet");
 const R_EARTH = 6378137;
 
 let PAGE = { w:8.5, h:11 };
+let ZOOM = null;   // null = fit to window; otherwise a multiplier of fit
 let VB   = { w:1000, h:1176 };
 let PROJ = null;
 let TRACK = [];
@@ -509,6 +533,21 @@ function simplify(pts, tol){
   return pts.filter((_,i)=>keep[i]);
 }
 
+/* Wrap on whole words at roughly `max` characters. Readability beats keeping
+   a label on one line, so long names are allowed to run to two or three. */
+function wrapText(str, max){
+  const words = String(str).split(/\s+/);
+  const lines = [];
+  let cur = "";
+  for(const w of words){
+    if(!cur) { cur = w; continue; }
+    if((cur + " " + w).length <= max) cur += " " + w;
+    else { lines.push(cur); cur = w; }
+  }
+  if(cur) lines.push(cur);
+  return lines;
+}
+
 /* ---------- svg helpers ---------- */
 function el(tag, attrs={}, parent=null){
   const n=document.createElementNS(SVGNS,tag);
@@ -538,8 +577,30 @@ let SYMBOL_STYLE = "emoji";   // "emoji" | "shapes"
 
 const EMOJI_FONT = 'AppleColorEmoji,"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
 
+/* Unicode has no binoculars character -- only a telescope and a microscope --
+   so this is drawn. It also survives enlargement to 24x36 better than an
+   emoji glyph, which went spindly at poster size. */
+function drawBinoculars(g, x, y, colour){
+  const b = el("g",{transform:`translate(${x},${y}) scale(0.95)`},g);
+  const barrel = {fill:"var(--paper)", stroke:colour, "stroke-width":2.2,
+                  "stroke-linejoin":"round"};
+  el("rect",Object.assign({x:-9.5,y:-11,width:7,height:9,rx:1.6},barrel),b);
+  el("rect",Object.assign({x:2.5, y:-11,width:7,height:9,rx:1.6},barrel),b);
+  el("rect",{x:-2.6,y:-6,width:5.2,height:6,fill:colour},b);
+  el("circle",Object.assign({cx:-6,cy:3.5,r:6.2},barrel),b);
+  el("circle",Object.assign({cx: 6,cy:3.5,r:6.2},barrel),b);
+  el("circle",{cx:-6,cy:3.5,r:2.1,fill:colour},b);
+  el("circle",{cx: 6,cy:3.5,r:2.1,fill:colour},b);
+  return b;
+}
+
 function drawSymbol(g, x, y, type, num){
   const emoji = DATA.symbols?.[type];
+
+  if(type==="viewpoint"){
+    drawBinoculars(g,x,y,SYMBOL.viewpoint.fill);
+    return;
+  }
 
   // Emoji features sit bare on the map — no plate, no border.
   if(SYMBOL_STYLE==="emoji" && emoji && type!=="volunteer"){
@@ -689,6 +750,8 @@ function placeLabels(){
     const [dx,dy,b] = best;
     if(dx||dy) shiftNode(L.node,dx,dy);
     placed.push(b);
+    // A symbol that moved only becomes an obstacle once it has settled.
+    if(L.after) L.after.forEach(addObstacle);
   }
 }
 
@@ -916,25 +979,40 @@ function drawMarkers(){
       continue;
     }
     const num = type==="volunteer" ? (m.num ?? ++autoNum) : null;
-    const before = g.childNodes.length;
-    drawSymbol(g,x,y,type,num);
-    for(let i=before;i<g.childNodes.length;i++) addObstacle(g.childNodes[i]);
 
+    // Features that mark a place rather than a person carry their symbol and
+    // label as one movable unit: readable just off the route beats precisely
+    // on it. Volunteer posts stay anchored -- that is where someone stands.
+    const movable = (DATA.markerPlacement?.displace || []).includes(type);
+
+    const unit = movable ? el("g",{},g) : g;
+    const before = unit.childNodes.length;
+    drawSymbol(unit,x,y,type,num);
+    const symbolNodes = [...unit.childNodes].slice(before);
+    if(!movable) symbolNodes.forEach(addObstacle);
+
+    let block = null;
     if(m.label){
-      // Label and note travel together as one block so the pass cannot split
-      // "Post 4" from the note explaining what happens at post 4.
-      const block = el("g",{class:"marker-label"},g);
-      txt(block,x+19,y-3,m.label,{
+      // Label and note stay together so the pass cannot split "Post 4" from
+      // the note explaining what happens at post 4.
+      block = el("g",{class:"marker-label"},unit);
+      const lines = wrapText(m.label, DATA.markerPlacement?.wrap || 22);
+      lines.forEach((ln,i)=>txt(block,x+19,y-3+i*15,ln,{
         "font-size":14,"font-weight":600,"font-family":"Barlow Semi Condensed, Arial, sans-serif",
-        fill:"var(--ink)",class:"halo"});
+        fill:"var(--ink)",class:"halo"}));
       if(m.note){
-        txt(block,x+19,y+12,m.note,{
+        const nl = wrapText(m.note, DATA.markerPlacement?.wrapNote || 26);
+        nl.forEach((ln,i)=>txt(block,x+19,y+12+(lines.length-1)*15+i*13,ln,{
           "font-size":11.5,"font-family":"Barlow Semi Condensed, Arial, sans-serif",
-          fill:"#4a4a4a",class:"halo"});
+          fill:"#4a4a4a",class:"halo"}));
       }
-      if(m.offset) shiftNode(block, m.offset[0], m.offset[1]);
-      LABELS.push({ node: block, manual: !!m.offset, droppable: false,
-                    routeCost: COST_ROUTE });
+    }
+
+    const node = movable ? unit : block;
+    if(node){
+      if(m.offset) shiftNode(node, m.offset[0], m.offset[1]);
+      LABELS.push({ node, manual: !!m.offset, droppable:false,
+                    routeCost: COST_ROUTE, after: movable ? symbolNodes : null });
     }
   }
 }
@@ -1165,12 +1243,16 @@ function drawElevation(){
 function setPage(w,h){
   PAGE={w,h};
   VB={w:1000, h:Math.round(1000*h/w)};
-  // fit the on-screen sheet into the viewport
+  // Fit the sheet to the window, then apply the zoom multiplier on top. The
+  // stage scrolls, so a magnified sheet can be panned rather than clipped.
   const availH = window.innerHeight - 72;
   const availW = window.innerWidth - 258 - 72;
-  const scale = Math.min(availW/w, availH/h);
+  const fit = Math.min(availW/w, availH/h);
+  const scale = fit * (ZOOM || 1);
   sheet.style.width  = (w*scale)+"px";
   sheet.style.height = (h*scale)+"px";
+  const zl = document.getElementById("zoomLabel");
+  if(zl) zl.textContent = ZOOM ? `${Math.round(ZOOM*100)}% of fit` : "Fit to window";
   let ps = document.getElementById("pageStyle");
   if(!ps){ ps=document.createElement("style"); ps.id="pageStyle"; document.head.appendChild(ps); }
   ps.textContent = `@page { size: ${w}in ${h}in; margin: 0; }`;
@@ -1278,6 +1360,29 @@ document.getElementById("clearPicks").addEventListener("click",()=>{
 });
 
 window.addEventListener("resize",()=>setPage(PAGE.w,PAGE.h));
+
+/* ---------- zoom ---------- */
+function setZoom(z){
+  // Re-rendering at the new size keeps label placement measured against the
+  // sheet the reader is actually looking at.
+  ZOOM = z ? Math.min(8, Math.max(0.25, z)) : null;
+  setPage(PAGE.w, PAGE.h);
+}
+document.getElementById("zoomIn") .addEventListener("click",()=>setZoom((ZOOM||1)*1.35));
+document.getElementById("zoomOut").addEventListener("click",()=>setZoom((ZOOM||1)/1.35));
+document.getElementById("zoomFit").addEventListener("click",()=>setZoom(null));
+
+// Cmd/Ctrl + wheel zooms the sheet, keeping the point under the cursor put.
+document.getElementById("stage").addEventListener("wheel",e=>{
+  if(!e.ctrlKey && !e.metaKey) return;
+  e.preventDefault();
+  const stage = e.currentTarget;
+  const before = { x:(stage.scrollLeft+e.clientX-258)/sheet.offsetWidth,
+                   y:(stage.scrollTop +e.clientY)    /sheet.offsetHeight };
+  setZoom((ZOOM||1) * (e.deltaY<0 ? 1.12 : 1/1.12));
+  stage.scrollLeft = before.x*sheet.offsetWidth  - (e.clientX-258);
+  stage.scrollTop  = before.y*sheet.offsetHeight -  e.clientY;
+},{passive:false});
 
 /* ---------- output presets ---------- */
 const PRESETS = {
