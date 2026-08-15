@@ -85,6 +85,11 @@ def main():
                     help="drop stream fragments shorter than this, metres")
     ap.add_argument("--tolerance", type=float, default=5.0,
                     help="simplification tolerance, metres")
+    ap.add_argument("--named-only", action="store_true", default=True,
+                    help="drop unnamed headwater reaches (default). They are "
+                         "real drainages but at this scale they read as stray "
+                         "marks cutting across the sheet")
+    ap.add_argument("--keep-unnamed", dest="named_only", action="store_false")
     ap.add_argument("--write", action="store_true")
     args = ap.parse_args()
 
@@ -124,6 +129,10 @@ def main():
             continue
         name = (a.get("gnis_name") or "").strip() or None
         order = int(a.get("streamorde") or 1)
+        # An unnamed order-1 reach is a seasonal headwater. Nobody navigates by
+        # it and it clutters the sheet.
+        if args.named_only and not name and order <= 1:
+            continue
         for path in (f.get("geometry") or {}).get("paths", []):
             coords = [(p[1], p[0]) for p in path if len(p) >= 2]
             if len(coords) < 2:

@@ -63,7 +63,9 @@ DEFAULT_DROP = ["Ox Trail Path", "Ox Trail", "Ox Connector Trail",
 # course buffer. Ridge Fire Road is here because the stretch between Pipeline
 # Road and the Observation Deck is NOT part of the race, and a runner needs to
 # see the whole of it to understand that it is the wrong way.
-FULL_EXTENT = ["Ridge Fire Road"]
+# Eagle Creek Trail is here so it does not stop dead at the buffer edge --
+# a trail that ends abruptly reads as a dead end rather than a clip.
+FULL_EXTENT = ["Ridge Fire Road", "Eagle Creek Trail"]
 
 # Ways we consider "trail". Henry Cowell tags its fire roads as track/service
 # and its singletrack as path/footway.
