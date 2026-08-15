@@ -32,7 +32,9 @@ JS = """
   const out = { points: [], panels: {},
                 trailNames: DATA.trailNames.length,
                 trailNamesDrawn: new Set([...document.querySelectorAll('.layer-trailname text')]
-                    .map(n => n.textContent.trim()).filter(Boolean)).size };
+                    .map(n => n.textContent.trim()).filter(Boolean)).size,
+                labelIssues: (typeof LABEL_ISSUES !== 'undefined' ? LABEL_ISSUES : []),
+                offSheet: (typeof OFF_SHEET !== 'undefined' ? OFF_SHEET : []) };
   // The projected route, straight from the live projection.
   for (const [la, lo] of TRACK) out.points.push(PROJ.toXY(la, lo));
   for (const cls of panels) {
@@ -64,6 +66,10 @@ def main():
             res = page.evaluate(JS, PANELS)
             pts = res["points"]
 
+            for it in res.get("labelIssues", []):
+                print(f"  !! label {it['text']!r}: {it['issue']}")
+            for lb in res.get("offSheet", []):
+                print(f"  !! marker {lb!r} plots off the map area")
             dropped = res["trailNames"] - res["trailNamesDrawn"]
             print(f"\n{preset}  ({len(pts)} route points, "
                   f"{res['trailNamesDrawn']}/{res['trailNames']} trail names placed"
