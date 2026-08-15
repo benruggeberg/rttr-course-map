@@ -46,9 +46,12 @@ CSP_TRAILS = ("https://services2.arcgis.com/AhxrK3F6WM8ECvDi/arcgis/rest/"
 CSP_UNIT = 418
 
 # State Parks abbreviates on the map face; spell it out for a printed label.
+# "Road" is abbreviated rather than expanded: these names are long, and the
+# sheet has more use for the width than the reader has for the extra three
+# letters. "Fire Rd" is what the park signs say anyway.
 NAME_FIXES = [
-    (r"\bTrl\b", "Trail"), (r"\bRd\b", "Road"), (r"\bCrk\b", "Creek"),
-    (r"\bMtn\b", "Mountain"), (r"\bFR\b", "Fire Road"), (r"\bAccs\b", "Access"),
+    (r"\bTrl\b", "Trail"), (r"\bCrk\b", "Creek"), (r"\bMtn\b", "Mountain"),
+    (r"\bFR\b", "Fire Rd"), (r"\bAccs\b", "Access"), (r"\bRoad\b", "Rd"),
 ]
 
 # Dropped outright -- geometry and label both. Trail that adds nothing at this
@@ -283,9 +286,10 @@ def main():
     ap.add_argument("--write", action="store_true", help="patch the HTML in place")
     args = ap.parse_args()
 
-    excluded = {n.strip().lower() for n in args.exclude.split(",") if n.strip()}
-    dropped = {n.strip().lower() for n in args.drop.split(",") if n.strip()}
-    full_extent = {n.strip().lower() for n in args.full_extent.split(",") if n.strip()}
+    tidy_set = lambda v: {(tidy_name(n.strip()) or "").lower() for n in v.split(",") if n.strip()}
+    excluded = tidy_set(args.exclude)
+    dropped = tidy_set(args.drop)
+    full_extent = tidy_set(args.full_extent)
 
     html_text = HTML.read_text(encoding="utf-8")
     track = read_track(html_text)
@@ -375,7 +379,7 @@ def main():
     # or if it is named on --on-course. The explicit list exists because OSM
     # coverage is uneven and a course trail missing from the map is the one
     # error a volunteer cannot recover from.
-    forced = {n.strip().lower() for n in args.on_course.split(",") if n.strip()}
+    forced = tidy_set(args.on_course)
     detected = {t["name"].lower() for t in named if t["on_course"]}
     course_names = detected | forced
 
@@ -455,7 +459,7 @@ def main():
             rot += 180
         return ll[mid], round(rot, 1)
 
-    repeat = {n.strip().lower(): 1 for n in args.repeat.split(",") if n.strip()}
+    repeat = {n: 1 for n in tidy_set(args.repeat)}
 
     labels = []
     # Course trails first so the collision pass hands them the best positions.
