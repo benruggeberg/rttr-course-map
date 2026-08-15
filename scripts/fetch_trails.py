@@ -78,7 +78,9 @@ HIGHWAY_TYPES = ["path", "footway", "track", "bridleway", "cycleway"]
 # a park signpost, so they are dropped by default rather than labelled.
 DEFAULT_EXCLUDE = ["Your Sister", "Bottom of the Low Road",
                    # crowds the spot Ridge Fire Road needs
-                   "Big Rock Hole Trail"]
+                   "Big Rock Hole Trail",
+                   # crowds the post 5 label, which now sits here
+                   "Powder Mill Trail"]
 
 # The trails the 10K actually runs on. Their names are the ones a volunteer
 # says on the radio, so they get the prominent label style and everything else

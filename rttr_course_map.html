@@ -416,7 +416,7 @@ const DATA = {
     { name:null, path:[[37.026065,-122.04392],[37.026491,-122.043345],[37.02696,-122.042977],[37.027272,-122.042918],[37.027747,-122.043141],[37.027961,-122.043494],[37.028025,-122.043861],[37.028195,-122.04391]] },
     { name:null, path:[[37.02346,-122.055115],[37.023979,-122.055029],[37.024275,-122.055093],[37.024578,-122.05494],[37.025,-122.054896],[37.025948,-122.05533]] },
     { name:"Buckeye Trail", path:[[37.017479,-122.045181],[37.01753,-122.045099],[37.017566,-122.044628],[37.017776,-122.044657],[37.01809,-122.044463],[37.018456,-122.044422],[37.018686,-122.04422],[37.018785,-122.044059],[37.018764,-122.044002]] },
-    { name:"Powder Mill Trail", path:[[37.018402,-122.041632],[37.018585,-122.04228],[37.018493,-122.042493],[37.018514,-122.042954],[37.018764,-122.043627]] },
+    { name:null, path:[[37.018402,-122.041632],[37.018585,-122.04228],[37.018493,-122.042493],[37.018514,-122.042954],[37.018764,-122.043627]] },
     { name:null, path:[[37.035026,-122.058804],[37.035353,-122.058575],[37.035615,-122.058626],[37.035815,-122.058753],[37.036101,-122.059271]] },
     { name:null, path:[[37.040522,-122.064027],[37.039461,-122.063374]] },
     { name:null, path:[[37.027919,-122.054389],[37.028262,-122.054784],[37.028301,-122.055008],[37.028389,-122.054989],[37.028506,-122.055104]] }
@@ -455,7 +455,7 @@ const DATA = {
     // Powder->Pine is only 155 units against 166 of text, so it silently fell
     // back to straight. Powder->Observation gives 313 and stays monotonic;
     // startOffset biases the name back down into the 5-to-7 stretch.
-    "POWDER MILL FIRE RD":      { startOffset:27, dy:-38, smooth:14 },
+    "POWDER MILL FIRE RD":      { startOffset:44, dy:-38, smooth:14 },
     "PINE TRAIL":               { placement:"block", wrap:10, offset:[36,116] },
     "POWDER MILL TRAIL":        { dy:-6,  startOffset:70 },
     "EAGLE CREEK TRAIL":        { startOffset:58, smooth:10 },
@@ -475,8 +475,7 @@ const DATA = {
     { text:"RINCON FIRE RD", at:[37.026457,-122.055362], rotate:58.7, path:[[37.025004,-122.055244],[37.024439,-122.05548],[37.024418,-122.055547],[37.023896,-122.05558],[37.023608,-122.055466],[37.023136,-122.0555],[37.02301,-122.055331],[37.022769,-122.055232],[37.021908,-122.055622],[37.021746,-122.055568],[37.021676,-122.055439],[37.021686,-122.055107],[37.021597,-122.05502],[37.020857,-122.055118],[37.02052,-122.055027],[37.020234,-122.055273]] },
     { text:"REDWOOD GROVE LOOP TRAIL", at:[37.035962,-122.059358], rotate:-83.2, path:[[37.03914,-122.063148],[37.039043,-122.062969],[37.03865,-122.062646],[37.038374,-122.062731],[37.038314,-122.062861],[37.037778,-122.062978],[37.037676,-122.062939],[37.037398,-122.062097],[37.037436,-122.061699],[37.03734,-122.06134],[37.037072,-122.061152],[37.03673,-122.06073],[37.036241,-122.060481],[37.036073,-122.060256],[37.036046,-122.06003],[37.03566,-122.059394],[37.035873,-122.059305],[37.035962,-122.059358],[37.036101,-122.059271],[37.036304,-122.059484],[37.036417,-122.059516],[37.036543,-122.059497],[37.036674,-122.059373],[37.037136,-122.059473],[37.037559,-122.059707],[37.037733,-122.059994],[37.038025,-122.059981],[37.038091,-122.06007],[37.038083,-122.060615],[37.038147,-122.060835],[37.03886,-122.061558],[37.039092,-122.062014],[37.039189,-122.062488],[37.03914,-122.063148]] },
     { text:"EAGLE CREEK TRAIL", at:[37.030292,-122.051786], rotate:-17.9, path:[[37.030269,-122.052194],[37.030292,-122.051786],[37.030497,-122.051307],[37.03054,-122.050924],[37.030491,-122.05052],[37.030694,-122.05004],[37.030971,-122.049757],[37.031313,-122.049568],[37.031711,-122.049438],[37.032015,-122.049445],[37.03224,-122.049344],[37.032379,-122.049412],[37.033048,-122.049394]] },
-    { text:"BUCKEYE TRAIL", at:[37.01809,-122.044463], rotate:-74.6, path:[[37.017479,-122.045181],[37.01753,-122.045099],[37.017566,-122.044628],[37.017776,-122.044657],[37.01809,-122.044463],[37.018456,-122.044422]] },
-    { text:"POWDER MILL TRAIL", at:[37.018493,-122.042493], rotate:-7.5, path:[[37.018402,-122.041632],[37.018585,-122.04228],[37.018493,-122.042493],[37.018514,-122.042954]] }
+    { text:"BUCKEYE TRAIL", at:[37.01809,-122.044463], rotate:-74.6, path:[[37.017479,-122.045181],[37.01753,-122.045099],[37.017566,-122.044628],[37.017776,-122.044657],[37.01809,-122.044463],[37.018456,-122.044422]] }
   ],
 
   // All point features. type drives the symbol.
@@ -526,7 +525,7 @@ const DATA = {
     // the junction cannot be computed. Snapped to the nearest point on the
     // route, which preserves the along-course position at mile 5.89.
     { type:"volunteer", at:[37.036280,-122.058480], num:2, label:"Indian",
-      note:"Redwood Grove Trail to Indian Creek", nudge:[-26,10], offset:[9,0] },
+      note:"Redwood Grove Trail to Indian Creek", nudge:[14,10], offset:[9,0] },
     { type:"volunteer", at:[37.039297,-122.063832], num:3, label:"Junction",
       note:"River Trail at Pipeline", side:"above", offset:[0,-2] },
     // CORRECTED. Recorded as 37.043600,-122.069740, which is 664 m off the
@@ -537,9 +536,9 @@ const DATA = {
     { type:"volunteer", at:[37.025948,-122.055330], num:4, label:"Rincon",
       note:"Rincon Fire Rd and Ridge Fire Rd", side:"left", offset:[-6,-4] },
     { type:"volunteer", at:[37.018800,-122.043900], num:5, label:"Powder",
-      note:"Powder Mill Fire Rd and Pipeline Rd", side:"left", offset:[-56,-30] },
+      note:"Powder Mill Fire Rd and Pipeline Rd", offset:[14,-26] },
     { type:"volunteer", at:[37.026200,-122.046000], num:6, label:"Observation",
-      nudge:[-30,26], side:"left", offset:[-4,0] },
+      note:"At the Observation Deck", nudge:[-30,26], side:"left", offset:[-4,0] },
     { type:"volunteer", at:[37.022600,-122.042900], num:7, label:"Pine",
       note:"Pine Trail & Powder Mill", side:"left", offset:[-6,0] },
     { type:"volunteer", at:[37.029000,-122.051000], num:8, label:"Last mile" },
@@ -554,7 +553,7 @@ const DATA = {
       snapToRoute:true, side:"above", offset:[-30,-6] },
     // California State Parks facility point.
     { type:"visitor", at:[37.039185,-122.063383], label:"Visitor Center",
-      side:"left", offset:[-6,-2] },
+      labelStyle:"trail", offset:[4,-2] },
 
     { type:"viewpoint", at:[37.023122,-122.051854], label:"Overlook Bench",
       side:"below", offset:[0,20] },
@@ -578,8 +577,10 @@ const DATA = {
   // `slide` moves one mile square along the course, in metres, where a post
   // lands on top of it. Sliding keeps the square on the trail; nudging in x/y
   // pushed it off into blank paper.
+  // `slide` moves a mile square along the course in metres; `nudge` is a final
+  // x/y trim in sheet units once it is on the right stretch.
   mileMarkers: { show:true, unit:"mi", size:7.5, stroke:1.5, font:9.5,
-                 fill:"var(--trail-label)", slide:{ "4":150 } },
+                 fill:"var(--trail-label)", slide:{ "4":150 }, nudge:{ "4":[0,7] } },
 
   // Direction arrows spaced evenly along the route.
   // `extra` adds arrows at named fractions along the course, for stretches
@@ -829,7 +830,7 @@ function drawSymbol(g, x, y, type, num){
     txt(g,x,y,label,{
       "text-anchor":"middle","dominant-baseline":"central",
       "font-family":"Barlow Semi Condensed, Arial, sans-serif",
-      "font-size": (label.length>1 ? 12 : (type==="volunteer" ? 17 : 15))*SYMBOL_SCALE,
+      "font-size": (label.length>2 ? 11 : (label.length>1 ? 13 : 15))*SYMBOL_SCALE,
       "font-weight":700, fill:spec.fill
     });
   }
@@ -994,8 +995,8 @@ function render(){
 
   drawContours();
   drawWater();
-  drawRail();
   drawOtherTrails();
+  drawRail();
   const proj = drawRoute();
   drawDirectionArrows(proj);
   drawMileMarkers();
@@ -1070,13 +1071,13 @@ function drawRail(){
     if(!r.path || r.path.length<2) continue;
     const pts = r.path.map(([la,lo])=>PROJ.toXY(la,lo));
     const d = pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");
-    const w = r.bridge ? 3.4 : 2.0;
+    const w = r.bridge ? 2.6 : 1.2;
     if(r.bridge) el("path",{d,fill:"none",stroke:"var(--paper)","stroke-width":w+5,
       "stroke-linecap":"round"},g);
     el("path",{d,fill:"none",stroke:"var(--rail)","stroke-width":w,
       "stroke-linejoin":"round","stroke-linecap":"round"},g);
     // ties, spaced along the run
-    const step = r.bridge ? 7 : 11, tick = r.bridge ? 4.2 : 3.0;
+    const step = r.bridge ? 7 : 13, tick = r.bridge ? 3.6 : 2.2;
     for(let i=1;i<pts.length;i++){
       const [x1,y1]=pts[i-1], [x2,y2]=pts[i];
       const L=Math.hypot(x2-x1,y2-y1); if(!L) continue;
@@ -1085,7 +1086,7 @@ function drawRail(){
         const cx=x1+ux*t, cy=y1+uy*t;
         el("line",{x1:(cx-uy*tick).toFixed(1), y1:(cy+ux*tick).toFixed(1),
                    x2:(cx+uy*tick).toFixed(1), y2:(cy-ux*tick).toFixed(1),
-                   stroke:"var(--rail)","stroke-width":r.bridge?1.5:1.0},g);
+                   stroke:"var(--rail)","stroke-width":r.bridge?1.2:0.7},g);
       }
     }
   }
@@ -1437,8 +1438,10 @@ function drawMileMarkers(){
       const t=(next+slide-dist)/(seg||1);
       const lat = TRACK[i-1][0]+(TRACK[i][0]-TRACK[i-1][0])*t;
       const lon = TRACK[i-1][1]+(TRACK[i][1]-TRACK[i-1][1])*t;
-      const [x,y]=PROJ.toXY(lat,lon);
+      let [x,y]=PROJ.toXY(lat,lon);
       const ms = DATA.mileMarkers;
+      const nn = (ms.nudge||{})[String(Math.round(next/step))];
+      if(nn){ x += nn[0]; y += nn[1]; }
       const box = el("rect",{x:x-ms.size,y:y-ms.size,width:ms.size*2,height:ms.size*2,
         rx:2,fill:"var(--paper)",stroke:ms.fill,"stroke-width":ms.stroke},g);
       addObstacle(box);
@@ -1494,7 +1497,8 @@ function drawMarkers(){
       checkerFlag(g,x,y,m.label||type.toUpperCase());
       continue;
     }
-    const num = type==="volunteer" ? (m.num ?? ++autoNum) : null;
+    // Posts are lettered P1..P8: a bare number reads as a mile marker.
+    const num = type==="volunteer" ? ("P" + (m.num ?? ++autoNum)) : null;
 
     // Features that mark a place rather than a person carry their symbol and
     // label as one movable unit: readable just off the route beats precisely
@@ -1518,7 +1522,11 @@ function drawMarkers(){
       const left = m.side === "left";
       const lx = stacked ? x : (left ? x-19 : x+19);
       const anchor = stacked ? "middle" : (left ? "end" : "start");
-      const lines = wrapText(m.label, DATA.markerPlacement?.wrap || 22);
+      // labelStyle:"trail" sets a marker's name like a background trail name:
+      // small, grey and tracked out. For furniture that is not part of the race.
+      const ts = m.labelStyle==="trail" ? DATA.trailNameStyle.other : null;
+      const lines = wrapText(ts ? m.label.toUpperCase() : m.label,
+                             DATA.markerPlacement?.wrap || 22);
       // First line sits on the symbol's own centre line, so a label and its
       // marker read as one row rather than the text floating above it.
       const noteLines = m.note ? wrapText(m.note, DATA.markerPlacement?.wrapNote || 26).length : 0;
@@ -1528,8 +1536,10 @@ function drawMarkers(){
       if(m.side === "below") top = y + 26;
       lines.forEach((ln,i)=>txt(block,lx,top+i*15,ln,{
         "text-anchor":anchor,
-        "font-size":14,"font-weight":600,"font-family":"Barlow Semi Condensed, Arial, sans-serif",
-        fill:"var(--ink)",class:"halo"}));
+        "font-size": ts ? ts.size : 14, "font-weight": ts ? ts.weight : 600,
+        "letter-spacing": ts ? ts.track : "0",
+        "font-family":"Barlow Semi Condensed, Arial, sans-serif",
+        fill: ts ? ts.fill : "var(--ink)", class:"halo"}));
       if(m.note){
         const nl = wrapText(m.note, DATA.markerPlacement?.wrapNote || 26);
         nl.forEach((ln,i)=>txt(block,lx,top+lines.length*15+i*13,ln,{
@@ -1645,7 +1655,7 @@ function drawLegend(){
     {type:"trail",     layer:"trails",    text:"Other park trail"},
     {type:"river",     layer:"river",     text:"River, creek & pond"},
     {type:"rail",      layer:"rail",      text:"Railway / trestle"},
-    {type:"visitor",   layer:"viewpoint", text:"Visitor centre"},
+    {type:"visitor",   layer:"viewpoint", text:"Visitor center"},
     {type:"contour",   layer:"terrain",   text:"Contour (20 m)"}
   ];
   const items = all.filter(it => !map.classList.contains("off-"+it.layer));
@@ -1694,7 +1704,7 @@ function drawLegend(){
         "font-family":EMOJI_FONT,"font-size":22});
     } else {
       SYMBOL_SCALE = 0.72;
-      drawSymbol(g,x,y,it.type,it.type==="volunteer"?7:null);
+      drawSymbol(g,x,y,it.type,it.type==="volunteer"?"P7":null);
       SYMBOL_SCALE = 1;
     }
     txt(g,x0+38,y,it.text,{"dominant-baseline":"central","font-size":14,
