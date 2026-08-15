@@ -24,6 +24,7 @@ import re
 import sys
 import urllib.parse
 import urllib.request
+import time
 from pathlib import Path
 
 HTML = Path(__file__).resolve().parent.parent / "rttr_course_map.html"
@@ -35,6 +36,24 @@ R_EARTH = 6378137.0
 # Live track only. Abandoned and disused grades are historically interesting
 # and completely invisible on the ground.
 LIVE = {"rail", "narrow_gauge", "light_rail", "preserved"}
+
+
+def overpass(query):
+    """Overpass with retries. It returns 504 under load often enough that a
+    single attempt makes this script unreliable."""
+    body = urllib.parse.urlencode({"data": query}).encode()
+    last = None
+    for attempt in range(4):
+        try:
+            req = urllib.request.Request(
+                OVERPASS, data=body, headers={"User-Agent": "rttr-course-map/1.0"})
+            with urllib.request.urlopen(req, timeout=180) as r:
+                return json.loads(r.read().decode())
+        except Exception as e:                                   # noqa: BLE001
+            last = e
+            print(f"  attempt {attempt + 1} failed: {e}", file=sys.stderr)
+            time.sleep(5 * (attempt + 1))
+    sys.exit(f"Overpass unreachable: {last}")
 
 
 def read_track(text):
@@ -106,9 +125,7 @@ def main():
     q = (f'[out:json][timeout:90];way["railway"]'
          f'({bbox[0]:.6f},{bbox[1]:.6f},{bbox[2]:.6f},{bbox[3]:.6f});out tags geom;')
     print("Querying OSM for railway ...")
-    req = urllib.request.Request(OVERPASS, data=urllib.parse.urlencode({"data": q}).encode(),
-                                 headers={"User-Agent": "rttr-course-map/1.0"})
-    data = json.loads(urllib.request.urlopen(req, timeout=150).read().decode())
+    data = overpass(q)
 
     rail = []
     for e in data.get("elements", []):
@@ -135,6 +152,36 @@ def main():
     for r in rail[:12]:
         print(f"    {r['gauge']:<8} {'BRIDGE ' if r['bridge'] else '       '}"
               f"{r['len']:6.0f} m  {r['name'] or '-'}")
+
+    # ---- named roads, from OSM -------------------------------------------
+    # Highway 9 and Graham Hill Road are how anyone actually arrives. They are
+    # drawn faintly: orientation for a reader, not part of the course.
+    q2 = (f'[out:json][timeout:90];way["highway"~"^(motorway|trunk|primary|secondary)$"]'
+          f'({bbox[0]:.6f},{bbox[1]:.6f},{bbox[2]:.6f},{bbox[3]:.6f});out tags geom;')
+    print("Querying OSM for named roads ...")
+    d3 = overpass(q2)
+    roads = []
+    for e in d3.get("elements", []):
+        t = e.get("tags") or {}
+        if not e.get("geometry"):
+            continue
+        name = t.get("name") or (f"Hwy {t['ref'].split()[-1]}" if t.get("ref") else None)
+        if t.get("ref") == "CA 9":
+            name = "Hwy 9"
+        coords = [(g["lat"], g["lon"]) for g in e["geometry"]]
+        xy = [proj(la, lo) for la, lo in coords]
+        if path_length(xy) < args.min_length:
+            continue
+        simp = simplify(xy, args.tolerance * 1.5)
+        idx = {id(p): i for i, p in enumerate(xy)}
+        kept = [coords[idx[id(p)]] for p in simp]
+        roads.append({"name": name,
+                      "path": [[round(a, 6), round(b, 6)] for a, b in kept],
+                      "len": path_length(xy)})
+    roads.sort(key=lambda r: -r["len"])
+    print(f"  {len(roads)} road segments")
+    for r in roads[:8]:
+        print(f"    {r['len']:6.0f} m  {r['name'] or '-'}")
 
     # ---- ponds, from USGS NHD --------------------------------------------
     params = {
@@ -168,6 +215,12 @@ def main():
     for p_ in ponds:
         print(f"    {p_['area']*100:.2f} ha  {len(p_['ring']):3d} pts  {p_['name'] or '-'}")
 
+    road_src = ",\n".join(
+        "    { name:%s, path:%s }" % (
+            json.dumps(r["name"]) if r["name"] else "null",
+            "[" + ",".join("[%s,%s]" % (p[0], p[1]) for p in r["path"]) + "]")
+        for r in roads)
+
     rail_src = ",\n".join(
         "    { name:%s, bridge:%s, gauge:%s, path:%s }" % (
             json.dumps(r["name"]) if r["name"] else "null",
@@ -192,6 +245,9 @@ def main():
          "  // trestles, drawn heavier than plain track.\n"),
         ("ponds", pond_src,
          "  // Ponds at Roaring Camp, from the USGS National Hydrography Dataset.\n"),
+        ("roads", road_src,
+         "  // Highway 9 and the other named approach roads. Drawn faintly: they are\n"
+         "  // orientation for a reader, not part of the course.\n"),
     ]:
         if f"\n  {key}: [" in new:
             new = re.sub(rf"\n  {key}: \[.*?\n  \],",
@@ -203,7 +259,7 @@ def main():
     if new == text:
         sys.exit("Nothing was replaced -- the DATA block markers moved?")
     HTML.write_text(new, encoding="utf-8")
-    print(f"\nPatched {HTML.name}: {len(rail)} track segments, {len(ponds)} ponds.")
+    print(f"\nPatched {HTML.name}: {len(rail)} track, {len(ponds)} ponds, {len(roads)} roads.")
 
 
 if __name__ == "__main__":

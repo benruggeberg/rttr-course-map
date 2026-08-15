@@ -34,6 +34,35 @@ JS = """
                 trailNamesDrawn: new Set([...document.querySelectorAll('.layer-trailname text')]
                     .map(n => n.textContent.trim()).filter(Boolean)).size,
                 labelIssues: (typeof LABEL_ISSUES !== 'undefined' ? LABEL_ISSUES : []),
+                edge: (() => {
+                  // 0.25in printer margin, expressed in viewBox units.
+                  const svg = document.getElementById('map');
+                  const vb = svg.viewBox.baseVal;
+                  const M = 0.25 / PAGE.w * vb.width;
+                  const root = svg.getScreenCTM().inverse();
+                  const out = [];
+                  for (const g of svg.querySelectorAll(':scope > g')) {
+                    if (getComputedStyle(g).display === 'none') continue;
+                    const cls = g.getAttribute('class') || '';
+                    for (const n of g.querySelectorAll('text,rect,circle,polygon,path,line')) {
+                      let b; try { b = n.getBBox(); } catch (e) { continue; }
+                      if (!b.width && !b.height) continue;
+                      const m = root.multiply(n.getScreenCTM());
+                      const xs = [], ys = [];
+                      for (const [x, y] of [[b.x,b.y],[b.x+b.width,b.y],
+                                            [b.x,b.y+b.height],[b.x+b.width,b.y+b.height]]) {
+                        xs.push(m.a*x + m.c*y + m.e); ys.push(m.b*x + m.d*y + m.f);
+                      }
+                      const x0=Math.min(...xs), x1=Math.max(...xs);
+                      const y0=Math.min(...ys), y1=Math.max(...ys);
+                      if (x0 < M || y0 < M || x1 > vb.width-M || y1 > vb.height-M)
+                        out.push({layer: cls, t: (n.textContent||n.tagName).trim().slice(0,26),
+                                  x0:Math.round(x0), y0:Math.round(y0),
+                                  x1:Math.round(x1), y1:Math.round(y1)});
+                    }
+                  }
+                  return out;
+                })(),
                 offSheet: (typeof OFF_SHEET !== 'undefined' ? OFF_SHEET : []) };
   // The projected route, straight from the live projection.
   for (const [la, lo] of TRACK) out.points.push(PROJ.toXY(la, lo));
@@ -68,6 +97,19 @@ def main():
 
             for it in res.get("labelIssues", []):
                 print(f"  !! label {it['text']!r}: {it['issue']}")
+            edge = res.get("edge", [])
+            # background layers are clipped to the map area, so their raw
+            # geometry crossing the margin is not a print risk
+            edge = [e for e in edge
+                    if e["layer"] not in ("layer-river", "layer-terrain",
+                                          "layer-trails", "layer-rail", "layer-roads")]
+            if edge:
+                print(f"  !! {len(edge)} item(s) inside the 0.25in printer margin:")
+                for e in edge[:12]:
+                    print(f"       {e['layer']:<18} {e['t']!r} "
+                          f"[{e['x0']},{e['y0']}]-[{e['x1']},{e['y1']}]")
+            else:
+                print("  edge check: nothing inside the 0.25in printer margin")
             for lb in res.get("offSheet", []):
                 print(f"  !! marker {lb!r} plots off the map area")
             dropped = res["trailNames"] - res["trailNamesDrawn"]

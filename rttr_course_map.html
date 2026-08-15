@@ -28,6 +28,7 @@
   --trail-label:#8f8f8f;
   --river:#7fa9bd;
   --rail:#6b6257;
+  --road:#c8c2b6;
   --contour:#d9d2c4;
   --contour-index:#c3b9a5;
 }
@@ -99,6 +100,7 @@ body{
 
 /* ---------- LAYER VISIBILITY ---------- */
 /* Each layer group hides when its class is present on the svg root. */
+.off-roads     .layer-roads,
 .off-rail      .layer-rail,
 .off-river     .layer-river,
 .off-terrain   .layer-terrain,
@@ -127,7 +129,7 @@ body{
    photocopied handout, which is the one output this theme exists for. */
 /* Background trail names go darker here than on screen: a mid grey that reads
    fine on a monitor drops out entirely once the sheet has been photocopied. */
-.theme-mono {--route:#000000;--trail:#b0b0b0;--water:#000;--vol:#000;--music:#000;--bigfoot:#000;--accent:#000;--trail-label:#6e6e6e;--river:#b6b6b6;--rail:#8c8c8c}
+.theme-mono {--route:#000000;--trail:#b0b0b0;--water:#000;--vol:#000;--music:#000;--bigfoot:#000;--accent:#000;--trail-label:#6e6e6e;--river:#b6b6b6;--rail:#8c8c8c;--road:#c9c9c9}
 .theme-mono .marker-fill{fill:#fff}
 /* Poster palette: pale sage paper, deep understory green, redwood-bark accent.
    Grounded in the park itself rather than a generic warm-cream treatment. */
@@ -136,7 +138,7 @@ body{
   --route:#16341f; --route-casing:#eef1ea;
   --trail:#a8b5a2; --hair:#c3cdbd; --trail-label:#7d8a79;
   --accent:#6b2f1a;
-  --water:#1f5f7a; --vol:#16341f; --music:#4a3a6b; --bigfoot:#4a3a2a; --river:#7d9fae; --rail:#5f5a4e;
+  --water:#1f5f7a; --vol:#16341f; --music:#4a3a6b; --bigfoot:#4a3a2a; --river:#7d9fae; --rail:#5f5a4e; --road:#c2c9bf;
 }
 .theme-forest #sheet{background:#eef1ea}
 
@@ -150,7 +152,7 @@ body{
   --trail:#c2b299; --hair:#cbbda3; --trail-label:#8a7a5f;
   --accent:#a8481f;
   --contour:#e0d3ba; --contour-index:#cdbb9a;
-  --water:#2f6b7a; --vol:#1f3d2b; --music:#6b4a2c; --bigfoot:#4a3a2a; --river:#8aa8ad; --rail:#6b5a44;
+  --water:#2f6b7a; --vol:#1f3d2b; --music:#6b4a2c; --bigfoot:#4a3a2a; --river:#8aa8ad; --rail:#6b5a44; --road:#d8cdb6;
 }
 .theme-vintage #sheet{background:#f2e9d8}
 .theme-vintage .map-title{letter-spacing:.02em}
@@ -165,7 +167,7 @@ body{
   --trail:#a9a297; --hair:#d4cec3; --trail-label:#8b8378;
   --accent:#b3241c;
   --contour:#cbb193; --contour-index:#a9855c;
-  --water:#1f6f8b; --vol:#23201c; --music:#5a4a7a; --bigfoot:#5c4033; --river:#8fb3c4; --rail:#6f665a;
+  --water:#1f6f8b; --vol:#23201c; --music:#5a4a7a; --bigfoot:#5c4033; --river:#8fb3c4; --rail:#6f665a; --road:#d3cdc2;
 }
 .theme-survey #sheet{background:#fbfaf7}
 
@@ -179,7 +181,7 @@ body{
   --trail:#c3ad86; --hair:#cbb389; --trail-label:#8c7448;
   --accent:#7a3a12;
   --contour:#ddcaa4; --contour-index:#c9b183;
-  --water:#3a6b78; --vol:#42301c; --music:#6b4a2c; --bigfoot:#4a3a2a; --river:#9ab0ab; --rail:#6b5c46;
+  --water:#3a6b78; --vol:#42301c; --music:#6b4a2c; --bigfoot:#4a3a2a; --river:#9ab0ab; --rail:#6b5c46; --road:#d5c9ad;
 }
 .theme-storybook #sheet{background:#efe2c4}
 
@@ -232,6 +234,7 @@ body{
     <label><input type="checkbox" data-layer="arrows" checked> Direction arrows</label>
     <label><input type="checkbox" data-layer="river" checked> River, creeks &amp; ponds</label>
     <label><input type="checkbox" data-layer="rail" checked> Railway &amp; trestle</label>
+    <label><input type="checkbox" data-layer="roads" checked> Roads (Hwy 9)</label>
     <label><input type="checkbox" data-layer="terrain"> Terrain contours</label>
     <label><input type="checkbox" data-layer="trails" checked> Other park trails</label>
     <label><input type="checkbox" data-layer="trailname" checked> Trail names</label>
@@ -403,6 +406,21 @@ const DATA = {
     { name:null, ring:[[37.040019,-122.061573],[37.040085,-122.061546],[37.040112,-122.061491],[37.04009,-122.061395],[37.039964,-122.061313],[37.039931,-122.061388],[37.039942,-122.06147],[37.039969,-122.06158],[37.040019,-122.061573]] }
   ],
 
+  // Highway 9 and the other named approach roads. Drawn faintly: they are
+  // orientation for a reader, not part of the course.
+  roads: [
+    { name:"Graham Hill Road", path:[[37.042463,-122.049644],[37.042661,-122.050643],[37.042992,-122.051647],[37.043591,-122.052556],[37.044313,-122.05391],[37.046447,-122.056897],[37.046601,-122.057317],[37.046795,-122.058209],[37.046771,-122.058955],[37.046534,-122.059517],[37.045906,-122.060175],[37.045736,-122.060489],[37.045604,-122.061567],[37.045718,-122.062309],[37.046237,-122.063067],[37.04685,-122.063658],[37.048119,-122.064352]] },
+    { name:"Hwy 9", path:[[37.023725,-122.060984],[37.023977,-122.060776],[37.024374,-122.059539],[37.02558,-122.059236],[37.026181,-122.058876],[37.026926,-122.05899],[37.027862,-122.058967],[37.028322,-122.059124],[37.028813,-122.058874],[37.02997,-122.058876],[37.030243,-122.05907],[37.030463,-122.059457],[37.030815,-122.061164],[37.030842,-122.062072],[37.030634,-122.062935],[37.031172,-122.063483],[37.031272,-122.064705],[37.031399,-122.065117],[37.031712,-122.065206],[37.031899,-122.064847]] },
+    { name:"Hwy 9", path:[[37.035571,-122.065042],[37.036644,-122.06571],[37.037607,-122.066662],[37.038325,-122.067654],[37.038957,-122.069402],[37.039653,-122.070344],[37.040375,-122.071584],[37.040835,-122.072038],[37.041714,-122.072556]] },
+    { name:"Graham Hill Road", path:[[37.036882,-122.04235],[37.039434,-122.044106],[37.041426,-122.045845],[37.041898,-122.046874],[37.042463,-122.049644]] },
+    { name:"Graham Hill Road", path:[[37.026361,-122.038583],[37.031722,-122.040913],[37.033988,-122.041489]] },
+    { name:"Hwy 9", path:[[37.015972,-122.062641],[37.016395,-122.062894],[37.016933,-122.062994],[37.017785,-122.06337],[37.01921,-122.063427],[37.020086,-122.062627],[37.020464,-122.062141],[37.021393,-122.061457],[37.022418,-122.061362],[37.022797,-122.061436]] },
+    { name:"Hwy 9", path:[[37.031899,-122.064847],[37.031951,-122.064352],[37.032311,-122.06327],[37.032606,-122.062848],[37.032882,-122.062767],[37.033114,-122.062873],[37.034113,-122.063939],[37.034936,-122.064325],[37.035571,-122.065042]] },
+    { name:"Graham Hill Road", path:[[37.034777,-122.041605],[37.036022,-122.041941],[37.036882,-122.04235]] },
+    { name:"Hwy 9", path:[[37.022797,-122.061436],[37.023068,-122.061396],[37.023725,-122.060984]] },
+    { name:"Graham Hill Road", path:[[37.033988,-122.041489],[37.034431,-122.041564]] }
+  ],
+
   // Optional: other park trails for context. Same [lat,lon] format.
   // Each entry is one trail line. Leave empty to skip.
   trails: [
@@ -456,7 +474,7 @@ const DATA = {
     // back to straight. Powder->Observation gives 313 and stays monotonic;
     // startOffset biases the name back down into the 5-to-7 stretch.
     "POWDER MILL FIRE RD":      { startOffset:44, dy:-38, smooth:14 },
-    "PINE TRAIL":               { placement:"block", wrap:10, offset:[36,116] },
+    "PINE TRAIL":               { placement:"block", wrap:5, offset:[-64,128] },
     "POWDER MILL TRAIL":        { dy:-6,  startOffset:70 },
     "EAGLE CREEK TRAIL":        { startOffset:58, smooth:10 },
     "RINCON FIRE RD":           { smooth:10, startOffset:32 }
@@ -525,7 +543,7 @@ const DATA = {
     // the junction cannot be computed. Snapped to the nearest point on the
     // route, which preserves the along-course position at mile 5.89.
     { type:"volunteer", at:[37.036280,-122.058480], num:2, label:"Indian",
-      note:"Redwood Grove Trail to Indian Creek", nudge:[14,10], offset:[9,0] },
+      note:"Redwood Grove Trail to Indian Creek", nudge:[6,10], offset:[9,0] },
     { type:"volunteer", at:[37.039297,-122.063832], num:3, label:"Junction",
       note:"River Trail at Pipeline", side:"above", offset:[0,-2] },
     // CORRECTED. Recorded as 37.043600,-122.069740, which is 664 m off the
@@ -536,7 +554,7 @@ const DATA = {
     { type:"volunteer", at:[37.025948,-122.055330], num:4, label:"Rincon",
       note:"Rincon Fire Rd and Ridge Fire Rd", side:"left", offset:[-6,-4] },
     { type:"volunteer", at:[37.018800,-122.043900], num:5, label:"Powder",
-      note:"Powder Mill Fire Rd and Pipeline Rd", offset:[14,-26] },
+      note:"Powder Mill Fire Rd and Pipeline Rd", side:"below", offset:[0,4] },
     { type:"volunteer", at:[37.026200,-122.046000], num:6, label:"Observation",
       note:"At the Observation Deck", nudge:[-30,26], side:"left", offset:[-4,0] },
     { type:"volunteer", at:[37.022600,-122.042900], num:7, label:"Pine",
@@ -550,13 +568,13 @@ const DATA = {
     // Shares its ground with the "Observation" post, so the symbol is drawn
     // clear of it. The coordinate is unchanged.
     { type:"viewpoint", at:[37.026165,-122.046037], label:"Observation Deck",
-      snapToRoute:true, side:"above", offset:[-30,-6] },
+      snapToRoute:true, labelStyle:"trail", wrap:11, side:"above", offset:[-26,-4] },
     // California State Parks facility point.
     { type:"visitor", at:[37.039185,-122.063383], label:"Visitor Center",
-      labelStyle:"trail", offset:[4,-2] },
+      labelStyle:"trail", wrap:8, offset:[4,-6] },
 
     { type:"viewpoint", at:[37.023122,-122.051854], label:"Overlook Bench",
-      side:"below", offset:[0,20] },
+      labelStyle:"trail", wrap:9, side:"below", offset:[0,16] },
 
     // Musician and Bigfoot positions are still to come -- no coordinates yet.
     // { type:"music",   at:[37.0000,-122.0000], label:"Fiddle duo" },
@@ -994,6 +1012,7 @@ function render(){
   }
 
   drawContours();
+  drawRoads();
   drawWater();
   drawOtherTrails();
   drawRail();
@@ -1064,6 +1083,40 @@ function drawWater(){
 /* The railway, with cross ties so it cannot be mistaken for a trail. Trestles
    are drawn heavier and with a casing: the San Lorenzo crossing is a landmark
    runners can actually see. */
+/* Approach roads. Deliberately the faintest thing on the sheet: a reader
+   orients by Highway 9, nobody runs on it. */
+function drawRoads(){
+  const g = group(map,"layer-roads");
+  g.setAttribute("clip-path","url(#mapArea)");
+  const defs = map.querySelector("defs");
+  let n = 0;
+  for(const r of (DATA.roads||[])){
+    if(!r.path || r.path.length<2) continue;
+    const pts = r.path.map(([la,lo])=>PROJ.toXY(la,lo));
+    const d = pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");
+    el("path",{d,fill:"none",stroke:"var(--road)","stroke-width":4.5,
+      "stroke-linejoin":"round","stroke-linecap":"round"},g);
+    // name it once, along the road, for the longest reaches only
+    if(r.name && pts.length>3){
+      let len=0; for(let i=1;i<pts.length;i++) len+=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);
+      if(len < 150) continue;
+      const id="rd"+(n++);
+      const run = pts[pts.length-1][0]-pts[0][0];
+      const ordered = run<0 ? [...pts].reverse() : pts;
+      el("path",{id, fill:"none", stroke:"none",
+        d: ordered.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ")},defs);
+      const node = el("text",{"font-size":10.5,"font-weight":600,"letter-spacing":"0.06em",
+        "font-family":"Barlow Semi Condensed, Arial, sans-serif",
+        fill:"var(--road)", class:"halo", "text-anchor":"middle"},g);
+      const tp = el("textPath",{startOffset:"50%", dy:-4},node);
+      tp.setAttributeNS("http://www.w3.org/1999/xlink","href","#"+id);
+      tp.setAttribute("href","#"+id);
+      tp.textContent = r.name;
+      try { if(node.getComputedTextLength() > len*0.9) node.remove(); } catch(e){}
+    }
+  }
+}
+
 function drawRail(){
   const g = group(map,"layer-rail");
   g.setAttribute("clip-path","url(#mapArea)");
@@ -1526,7 +1579,7 @@ function drawMarkers(){
       // small, grey and tracked out. For furniture that is not part of the race.
       const ts = m.labelStyle==="trail" ? DATA.trailNameStyle.other : null;
       const lines = wrapText(ts ? m.label.toUpperCase() : m.label,
-                             DATA.markerPlacement?.wrap || 22);
+                             m.wrap || DATA.markerPlacement?.wrap || 22);
       // First line sits on the symbol's own centre line, so a label and its
       // marker read as one row rather than the text floating above it.
       const noteLines = m.note ? wrapText(m.note, DATA.markerPlacement?.wrapNote || 26).length : 0;
@@ -1655,6 +1708,7 @@ function drawLegend(){
     {type:"trail",     layer:"trails",    text:"Other park trail"},
     {type:"river",     layer:"river",     text:"River, creek & pond"},
     {type:"rail",      layer:"rail",      text:"Railway / trestle"},
+    {type:"road",      layer:"roads",     text:"Road (Hwy 9)"},
     {type:"visitor",   layer:"viewpoint", text:"Visitor center"},
     {type:"contour",   layer:"terrain",   text:"Contour (20 m)"}
   ];
@@ -1679,6 +1733,9 @@ function drawLegend(){
         "stroke-linecap":"round"},g);
     } else if(it.type==="river"){
       el("line",{x1:x-11,y1:y,x2:x+11,y2:y,stroke:"var(--river)","stroke-width":3.4,
+        "stroke-linecap":"round"},g);
+    } else if(it.type==="road"){
+      el("line",{x1:x-11,y1:y,x2:x+11,y2:y,stroke:"var(--road)","stroke-width":4.5,
         "stroke-linecap":"round"},g);
     } else if(it.type==="rail"){
       el("line",{x1:x-11,y1:y,x2:x+11,y2:y,stroke:"var(--rail)","stroke-width":2},g);
@@ -1726,9 +1783,12 @@ function drawCredit(){
 function drawBrief(){
   if(!DATA.brief) return;
   const g = group(map,"layer-brief");
-  // Sits in the band the volunteer preset reserves below the map, never over it.
+  // Sits in the band the volunteer preset reserves below the map, never over
+  // it. Anchored to the foot of the sheet rather than to the map floor, so
+  // deepening the bottom margin opens room under the course instead of just
+  // pushing the brief down with it.
   const pad = DATA.layout.margins.left;
-  const top = mapFloor() + 30;
+  const top = VB.h - VB.h*0.092;
   el("line",{x1:pad,y1:top-16,x2:VB.w-pad,y2:top-16,stroke:"var(--ink)","stroke-width":2},g);
 
   const cols = DATA.brief.columns||[];
@@ -1951,10 +2011,10 @@ const PRESETS = {
   volunteer: {
     page:[8.5,11], theme:"theme-mono", symbols:"shapes",
     // reserves a bottom band for the brief panel
-    margins:{ left:56, right:56, top:0.100, bottom:0.145 },
+    margins:{ left:56, right:56, top:0.100, bottom:0.175 },
     on:["route","terminus","arrows","trails","trailname","mile","water","vol",
         "music","bigfoot","viewpoint","labels","title","legend","compass","scale","brief",
-        "river","rail"],
+        "river","rail","roads"],
     off:["elev","terrain"]
   },
   poster: {
