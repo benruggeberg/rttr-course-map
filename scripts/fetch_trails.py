@@ -37,6 +37,25 @@ MIRRORS = [
     "https://overpass.kumi.systems/api/interpreter",
 ]
 
+# California State Parks' own trail layer, the one behind the official park
+# map viewer. Authoritative where OSM is volunteer-contributed, and it carries
+# a use class (TRLDES) so service roads can be told from trail. Unit 418 is
+# Henry Cowell Redwoods SP.
+CSP_TRAILS = ("https://services2.arcgis.com/AhxrK3F6WM8ECvDi/arcgis/rest/"
+              "services/Click_able_Layers/FeatureServer/4/query")
+CSP_UNIT = 418
+
+# State Parks abbreviates on the map face; spell it out for a printed label.
+NAME_FIXES = [
+    (r"\bTrl\b", "Trail"), (r"\bRd\b", "Road"), (r"\bCrk\b", "Creek"),
+    (r"\bMtn\b", "Mountain"), (r"\bFR\b", "Fire Road"), (r"\bAccs\b", "Access"),
+]
+
+# Dropped outright -- geometry and label both. Trail that adds nothing at this
+# scale or that the committee has asked not to show.
+DEFAULT_DROP = ["Ox Trail Path", "Ox Trail", "Ox Connector Trail",
+                "Residence Service Road"]
+
 # Ways we consider "trail". Henry Cowell tags its fire roads as track/service
 # and its singletrack as path/footway.
 HIGHWAY_TYPES = ["path", "footway", "track", "bridleway", "cycleway"]
@@ -128,6 +147,72 @@ def read_track(html_text):
     return json.loads(m.group(1))
 
 
+def tidy_name(n):
+    if not n:
+        return None
+    for pat, rep in NAME_FIXES:
+        n = re.sub(pat, rep, n)
+    return re.sub(r"\s+", " ", n).strip()
+
+
+def fetch_csp(bbox):
+    """California State Parks trail layer -> [{name, coords:[(lat,lon)]}]."""
+    params = {
+        "where": f"Unit_Nbr={CSP_UNIT}",
+        "geometry": f"{bbox[1]:.6f},{bbox[0]:.6f},{bbox[3]:.6f},{bbox[2]:.6f}",
+        "geometryType": "esriGeometryEnvelope",
+        "inSR": "4326", "outSR": "4326",
+        "spatialRel": "esriSpatialRelIntersects",
+        "outFields": "ROUTENAME,TRLDES",  # TRLDES is the use class
+        "returnGeometry": "true",
+        "f": "json",
+    }
+    url = CSP_TRAILS + "?" + urllib.parse.urlencode(params)
+    req = urllib.request.Request(url, headers={"User-Agent": "rttr-course-map/1.0"})
+    with urllib.request.urlopen(req, timeout=120) as r:
+        data = json.loads(r.read().decode())
+    if "error" in data:
+        sys.exit(f"State Parks service error: {data['error']}")
+
+    out = []
+    for f in data.get("features", []):
+        attrs = f.get("attributes") or {}
+        # "Not Designated" is how the layer marks parking aisles, entrance
+        # roads and residence service roads. Real to the park, noise to a
+        # runner, so they never reach the sheet.
+        if (attrs.get("TRLDES") or "").strip() == "Not Designated":
+            continue
+        name = tidy_name(attrs.get("ROUTENAME"))
+        for path in (f.get("geometry") or {}).get("paths", []):
+            # Esri gives [x, y] i.e. [lon, lat]
+            coords = [(pt[1], pt[0]) for pt in path if len(pt) >= 2]
+            if len(coords) >= 2:
+                out.append({"name": name, "coords": coords})
+    return out
+
+
+def fetch_osm(bbox):
+    """OpenStreetMap via Overpass -> [{name, coords:[(lat,lon)]}]."""
+    regex = "|".join(HIGHWAY_TYPES)
+    query = f"""[out:json][timeout:180];
+(
+  way["highway"~"^({regex})$"]({bbox[0]:.6f},{bbox[1]:.6f},{bbox[2]:.6f},{bbox[3]:.6f});
+  way["highway"]["name"~"[Ff]ire [Rr](oa)?d"]({bbox[0]:.6f},{bbox[1]:.6f},{bbox[2]:.6f},{bbox[3]:.6f});
+);
+out body geom;
+"""
+    data = overpass(query)
+    out = []
+    for e in data.get("elements", []):
+        if e.get("type") != "way" or not e.get("geometry"):
+            continue
+        out.append({
+            "name": tidy_name((e.get("tags") or {}).get("name")),
+            "coords": [(g["lat"], g["lon"]) for g in e["geometry"]],
+        })
+    return out
+
+
 def overpass(query):
     body = urllib.parse.urlencode({"data": query}).encode()
     last = None
@@ -168,10 +253,18 @@ def main():
                     help="comma-separated trails the course runs on. These get "
                          "the prominent label style. Detection is automatic; "
                          "this list is a safety net for uneven OSM coverage")
+    ap.add_argument("--source", choices=["csp", "osm"], default="csp",
+                    help="csp = California State Parks' own trail layer, the "
+                         "one behind the official park map (default). "
+                         "osm = OpenStreetMap via Overpass")
+    ap.add_argument("--drop", default=",".join(DEFAULT_DROP),
+                    help="comma-separated trails to remove entirely, geometry "
+                         "and label both")
     ap.add_argument("--write", action="store_true", help="patch the HTML in place")
     args = ap.parse_args()
 
     excluded = {n.strip().lower() for n in args.exclude.split(",") if n.strip()}
+    dropped = {n.strip().lower() for n in args.drop.split(",") if n.strip()}
 
     html_text = HTML.read_text(encoding="utf-8")
     track = read_track(html_text)
@@ -186,28 +279,29 @@ def main():
     bbox = (min(lats) - pad, min(lons) - pad * 1.25,
             max(lats) + pad, max(lons) + pad * 1.25)
 
-    regex = "|".join(HIGHWAY_TYPES)
-    query = f"""[out:json][timeout:180];
-(
-  way["highway"~"^({regex})$"]({bbox[0]:.6f},{bbox[1]:.6f},{bbox[2]:.6f},{bbox[3]:.6f});
-  way["highway"]["name"~"[Ff]ire [Rr](oa)?d"]({bbox[0]:.6f},{bbox[1]:.6f},{bbox[2]:.6f},{bbox[3]:.6f});
-);
-out body geom;
-"""
-    print(f"Querying Overpass, bbox {bbox[0]:.4f},{bbox[1]:.4f},{bbox[2]:.4f},{bbox[3]:.4f} ...")
-    data = overpass(query)
-    ways = [e for e in data.get("elements", []) if e.get("type") == "way" and e.get("geometry")]
+    src = "California State Parks (unit 418)" if args.source == "csp" else "OpenStreetMap"
+    print(f"Querying {src}, bbox "
+          f"{bbox[0]:.4f},{bbox[1]:.4f},{bbox[2]:.4f},{bbox[3]:.4f} ...")
+    ways = fetch_csp(bbox) if args.source == "csp" else fetch_osm(bbox)
     print(f"  {len(ways)} candidate ways returned")
 
     kept = []
     for w in ways:
-        name = (w.get("tags") or {}).get("name")
+        name = w["name"]
+        # Dropped names take their geometry with them.
+        if name and name.lower() in dropped:
+            continue
         # Excluded names keep their geometry but lose their label: the trail is
         # still real tread a runner could wrongly turn onto, it just should not
         # be captioned with a name nobody uses.
         if name and name.lower() in excluded:
             name = None
-        geom = [(g["lat"], g["lon"]) for g in w["geometry"]]
+        # Same treatment for connector stubs and access spurs. The tread stays
+        # on the map; the name is a mouthful nobody says out loud, and at this
+        # scale it crowds out the trail names that matter.
+        if name and re.search(r"\b(Connector|Connectors|Access|Spur)\b", name, re.I):
+            name = None
+        geom = w["coords"]
         if len(geom) < 2:
             continue
 

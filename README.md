@@ -55,4 +55,20 @@ Verified against the baked-in track — don't re-derive:
 - **Separate from the live race website.** The RTTR site keeps its existing
   Leaflet map on `course_info.html`; nothing here touches it.
 
-Route and trail data © OpenStreetMap contributors.
+## Data sources
+
+- **Trails** — the [California State Parks trail layer][csp] for unit 418
+  (Henry Cowell Redwoods), the same data behind the official park map viewer.
+  Pulled by `scripts/fetch_trails.py --source csp`. Authoritative, and it
+  carries a use class so parking aisles and service roads can be filtered out.
+- **Viewpoints** — OpenStreetMap, cross-checked against the State Parks
+  facility points where both carry the feature.
+- **Route and elevation** — the Strava GPX in this repo, baked into `DATA`.
+
+`--source osm` still works and pulls OpenStreetMap via Overpass, kept as a
+fallback and for comparing the two.
+
+[csp]: https://csparks.maps.arcgis.com/apps/instant/basic/index.html?appid=065b067caa204e8da48d4b53c9483ab0&UNITNBR=418
+
+Trail data © California State Parks · Route and viewpoints © OpenStreetMap
+contributors.

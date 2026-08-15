@@ -35,6 +35,20 @@ Note the route passes some of this ground twice, so a coordinate can be
 genuinely correct while the "renders at" mile looks surprising — the nearest
 track point may be on the return leg.
 
+## Trail source disagreements
+
+Trails now come from California State Parks (unit 418) rather than OSM. The
+two sources do not agree everywhere:
+
+- **Indian Creek Trail** is in OSM but **absent from the State Parks layer**,
+  so it no longer carries a label. It is named on the course-trail list, and
+  `fetch_trails.py` prints a warning about it on every run.
+- **Redwood Grove Loop Trail** is in the State Parks layer but was missing
+  from OSM. This one is good news: it corroborates the Indian post's
+  description, "Redwood Grove Trail to Indian Creek".
+- **Rincon Fire Road** reads as on-course in OSM but not in the State Parks
+  geometry, so it is currently styled as a background trail.
+
 ## Still missing
 
 - **Musician** — no coordinates yet.
