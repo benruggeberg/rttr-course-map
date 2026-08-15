@@ -319,9 +319,8 @@ const DATA = {
     // there costs more legibility than it buys.
     "RIDGE FIRE RD":            { placement:"block", wrap:14, rotate:-14,
                                   offset:[-58,24] },
-    "POWDER MILL FIRE RD":      { placement:"block", wrap:30, rotate:-85,
-                                  offset:[-62,58] },
-    "PINE TRAIL":               { placement:"block", wrap:10, offset:[46,52] },
+    "POWDER MILL FIRE RD":      { between:["Powder","Pine"], dy:16 },
+    "PINE TRAIL":               { placement:"block", wrap:10, offset:[74,104] },
     "POWDER MILL TRAIL":        { dy:-6,  startOffset:70 }
   },
 
@@ -343,7 +342,10 @@ const DATA = {
   ],
 
   // All point features. type drives the symbol.
-  // types: start | finish | startfinish | water | volunteer | music | bigfoot | medical | restroom | parking
+  // types: start | finish | startfinish | water | volunteer | music | bigfoot
+  //        | viewpoint | medical | restroom | parking
+  // viewpoint has no emoji: it is drawn (Bootstrap Icons binoculars) in both
+  // symbol styles, so the legend and the markers cannot drift apart.
   //
   // Labels place themselves: a collision pass nudges each one clear of the
   // route, the mile squares, the panels and the other labels. Add an optional
@@ -359,7 +361,6 @@ const DATA = {
     music:   "\u{1F3B5}",   // musical note
     bigfoot: "\u{1F463}",   // footprints — the U+1FAC8 "hairy creature" glyph
                             // is too new and renders as a hollow box
-    viewpoint:"\u{1F52D}",  // telescope — observation deck, overlook bench
     medical: "\u{1F691}",
     restroom:"\u{1F6BB}",
     parking: "\u{1F17F}"
@@ -1030,7 +1031,27 @@ function drawTrailNames(){
 
     // Default: the name follows its own trail. A label that traces the line it
     // names needs no leader and cannot be mistaken for the neighbouring trail.
-    const pts = (t.path||[]).map(([la,lo])=>PROJ.toXY(la,lo));
+    let src = t.path || [];
+    // `between:["A","B"]` trims the guide to the stretch between two markers.
+    // A trail the course runs out and back along doubles on itself, and text
+    // following a path that reverses renders mirrored partway down it; taking
+    // a single leg gives the label a run that only goes one way.
+    if(t.between && src.length > 2){
+      const near = lbl => {
+        const m = (DATA.markers||[]).find(k => k.label === lbl);
+        if(!m) return -1;
+        let bi = 0, bd = Infinity;
+        src.forEach(([la,lo],i)=>{
+          const d = (la-m.at[0])**2 + (lo-m.at[1])**2;
+          if(d < bd){ bd = d; bi = i; }
+        });
+        return bi;
+      };
+      const i0 = near(t.between[0]), i1 = near(t.between[1]);
+      if(i0 >= 0 && i1 >= 0 && Math.abs(i1-i0) >= 1)
+        src = src.slice(Math.min(i0,i1), Math.max(i0,i1)+1);
+    }
+    const pts = src.map(([la,lo])=>PROJ.toXY(la,lo));
     if(pts.length >= 2){
       // Reverse a right-to-left path, or the text renders upside down.
       const run = pts[pts.length-1][0] - pts[0][0];
