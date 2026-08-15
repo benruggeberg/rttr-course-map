@@ -26,6 +26,7 @@
   --accent:#0f5c2e;
   --hair:#d8d8d8;
   --trail-label:#8f8f8f;
+  --decor-tree:#3f5a44;
   --contour:#d9d2c4;
   --contour-index:#c3b9a5;
 }
@@ -97,6 +98,7 @@ body{
 
 /* ---------- LAYER VISIBILITY ---------- */
 /* Each layer group hides when its class is present on the svg root. */
+.off-decor     .layer-decor,
 .off-terrain   .layer-terrain,
 .off-trails    .layer-trails,
 .off-route     .layer-route,
@@ -145,7 +147,7 @@ body{
   --route:#1f3d2b; --route-casing:#f2e9d8;
   --trail:#c2b299; --hair:#cbbda3; --trail-label:#8a7a5f;
   --accent:#a8481f;
-  --contour:#e0d3ba; --contour-index:#cdbb9a;
+  --contour:#e0d3ba; --contour-index:#cdbb9a; --decor-tree:#40573f;
   --water:#2f6b7a; --vol:#1f3d2b; --music:#6b4a2c; --bigfoot:#4a3a2a;
 }
 .theme-vintage #sheet{background:#f2e9d8}
@@ -160,10 +162,24 @@ body{
   --route:#b3241c; --route-casing:#fbfaf7;
   --trail:#a9a297; --hair:#d4cec3; --trail-label:#8b8378;
   --accent:#b3241c;
-  --contour:#cbb193; --contour-index:#a9855c;
+  --contour:#cbb193; --contour-index:#a9855c; --decor-tree:#6b6156;
   --water:#1f6f8b; --vol:#23201c; --music:#5a4a7a; --bigfoot:#5c4033;
 }
 .theme-survey #sheet{background:#fbfaf7}
+
+/* ---- Poster direction C: storybook ----
+   Aged parchment and sepia ink, the ornament carrying most of the character.
+   Warmer and older than Vintage Park: this is the one that reads as a
+   keepsake somebody pins up after the race rather than a wayfinding sheet. */
+.theme-storybook{
+  --paper:#efe2c4; --ink:#42301c;
+  --route:#7a3a12; --route-casing:#efe2c4;
+  --trail:#c3ad86; --hair:#cbb389; --trail-label:#8c7448;
+  --accent:#7a3a12;
+  --contour:#ddcaa4; --contour-index:#c9b183; --decor-tree:#4a5a34;
+  --water:#3a6b78; --vol:#42301c; --music:#6b4a2c; --bigfoot:#4a3a2a;
+}
+.theme-storybook #sheet{background:#efe2c4}
 
 /* ---------- PRINT ---------- */
 @media print{
@@ -204,6 +220,7 @@ body{
     <label><input type="checkbox" data-layer="route" checked> Race route</label>
     <label><input type="checkbox" data-layer="terminus" checked> Start / finish</label>
     <label><input type="checkbox" data-layer="arrows" checked> Direction arrows</label>
+    <label><input type="checkbox" data-layer="decor"> Illustrated ornament</label>
     <label><input type="checkbox" data-layer="terrain"> Terrain contours</label>
     <label><input type="checkbox" data-layer="trails" checked> Other park trails</label>
     <label><input type="checkbox" data-layer="trailname" checked> Trail names</label>
@@ -243,6 +260,7 @@ body{
       <option value="theme-forest">Forest — poster</option>
       <option value="theme-vintage">Vintage park — poster</option>
       <option value="theme-survey">Field survey — poster</option>
+      <option value="theme-storybook">Storybook — poster</option>
     </select>
     <select id="symbolSel">
       <option value="emoji">Symbols — emoji</option>
@@ -490,6 +508,25 @@ const DATA = {
   // `extra` adds arrows at named fractions along the course, for stretches
   // the even spacing leaves bare. 0.02 sits just before the Junction post.
   directionArrows: { count: 14, mileClearance: 34, extra: [0.02] },
+
+  // Illustrated ornament for the poster. Positions are in viewBox units and
+  // were chosen from a scan for regions with no route, trail or panel in them
+  // -- ornament must never be the reason a runner misreads the course.
+  decor: {
+    frame: true,
+    grain: true,
+    rose: true,
+    grove: [
+      { x: 88,  base: 1010, h: 300 },
+      { x: 148, base: 1030, h: 218 },
+      { x: 118, base: 1052, h: 258 },
+      { x: 186, base: 1046, h: 168 },
+      { x: 60,  base: 1044, h: 196 }
+    ],
+    // Bigfoot heads off into the trees. The race is named for him; the map
+    // may as well admit he is out there.
+    tracks: { x: 214, y: 1120, n: 7, dx: 26, dy: -21, size: 9 }
+  },
 
   // Sheet furniture placement. The map is projected into the area left after
   // `margins`, so shrinking those stretches the course corner to corner and
@@ -863,6 +900,7 @@ function render(){
     return;
   }
 
+  drawDecor();
   drawContours();
   drawOtherTrails();
   const proj = drawRoute();
@@ -897,6 +935,69 @@ function render(){
 /* Terrain, drawn first so everything else sits on top of it. Index contours
    carry a little more weight, which is what lets a reader pick out the shape
    of the ridge at a glance rather than counting lines. */
+/* A stylised coast redwood: a straight bole and stacked boughs that taper to
+   a spire. Drawn as flat silhouette so it stays a poster ornament rather than
+   pretending to be a map symbol. */
+function redwood(g, x, base, h, fill){
+  const tw = h*0.045;
+  el("rect",{x:x-tw/2, y:base-h*0.20, width:tw, height:h*0.20, fill},g);
+  const tiers = 6;
+  for(let i=0;i<tiers;i++){
+    const f = i/(tiers-1);                    // 0 = spire, 1 = lowest bough
+    const yTop = base - h*0.17 - (1-f)*h*0.80;
+    const yBot = yTop + h*0.24;
+    const hw   = h*0.20*(f*0.8 + 0.22);
+    el("path",{d:`M${x.toFixed(1)},${yTop.toFixed(1)} `+
+                 `L${(x+hw).toFixed(1)},${yBot.toFixed(1)} `+
+                 `L${(x-hw).toFixed(1)},${yBot.toFixed(1)} Z`, fill},g);
+  }
+}
+
+function bigfootTrack(g, x, y, r, rot, fill){
+  const t = el("g",{transform:`translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${rot})`},g);
+  el("ellipse",{cx:0, cy:0, rx:r*0.62, ry:r, fill},t);
+  for(let i=0;i<5;i++){
+    const a = -0.9 + i*0.45;
+    el("circle",{cx:Math.sin(a)*r*0.62, cy:-r*1.25 + Math.abs(Math.cos(a))*r*0.12,
+      r:r*(0.26 - i*0.022), fill},t);
+  }
+}
+
+function drawDecor(){
+  const d = DATA.decor; if(!d) return;
+  const g = group(map,"layer-decor");
+  const defs = map.querySelector("defs");
+
+  // Paper grain. feTurbulence is generated by the renderer, so the sheet stays
+  // a single file with no image asset attached to it.
+  if(d.grain){
+    const f = el("filter",{id:"grain", x:"0", y:"0", width:"100%", height:"100%"},defs);
+    el("feTurbulence",{type:"fractalNoise", baseFrequency:"0.9",
+      numOctaves:"4", stitchTiles:"stitch"},f);
+    el("feColorMatrix",{type:"saturate", values:"0"},f);
+    el("rect",{x:0,y:0,width:VB.w,height:VB.h, filter:"url(#grain)",
+      opacity:0.05, "pointer-events":"none"},g);
+  }
+
+  if(d.frame){
+    const m = 26;
+    el("rect",{x:m, y:m, width:VB.w-m*2, height:VB.h-m*2, fill:"none",
+      stroke:"var(--ink)", "stroke-width":3},g);
+    el("rect",{x:m+7, y:m+7, width:VB.w-(m+7)*2, height:VB.h-(m+7)*2, fill:"none",
+      stroke:"var(--ink)", "stroke-width":1},g);
+  }
+
+  for(const t of (d.grove||[])) redwood(g, t.x, t.base, t.h, "var(--decor-tree)");
+
+  if(d.tracks){
+    const k = d.tracks;
+    for(let i=0;i<k.n;i++){
+      bigfootTrack(g, k.x + i*k.dx + (i%2?k.size*1.1:0), k.y + i*k.dy,
+        k.size, -38 + (i%2?7:-7), "var(--decor-tree)");
+    }
+  }
+}
+
 function drawContours(){
   const g = group(map,"layer-terrain");
   for(const c of (DATA.contours||[])){
@@ -1367,6 +1468,23 @@ function drawCompass(){
   const g = group(map,"layer-compass");
   const b = legendBox();
   const r=20, x=b.x+r+4, y=b.y+b.h+46;
+
+  // With ornament on, the plain arrow gives way to an eight-point rose.
+  if(DATA.decor?.rose && !map.classList.contains("off-decor")){
+    const R = r*1.5;
+    for(let i=0;i<8;i++){
+      const a = i*Math.PI/4, w = (i%2 ? R*0.16 : R*0.24), len = (i%2 ? R*0.62 : R);
+      const px = x+Math.cos(a)*len, py = y+Math.sin(a)*len;
+      const qx = x+Math.cos(a+Math.PI/2)*w, qy = y+Math.sin(a+Math.PI/2)*w;
+      const sx = x+Math.cos(a-Math.PI/2)*w, sy = y+Math.sin(a-Math.PI/2)*w;
+      el("polygon",{points:`${px.toFixed(1)},${py.toFixed(1)} ${qx.toFixed(1)},${qy.toFixed(1)} ${sx.toFixed(1)},${sy.toFixed(1)}`,
+        fill: i%2 ? "var(--decor-tree)" : "var(--ink)"},g);
+    }
+    el("circle",{cx:x,cy:y,r:R*0.20,fill:"var(--paper)",stroke:"var(--ink)","stroke-width":1.6},g);
+    txt(g,x,y+R+14,"N",{"text-anchor":"middle","font-size":14,"font-weight":700,
+      "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"var(--ink)"});
+    return;
+  }
   el("circle",{cx:x,cy:y,r:r,fill:"var(--paper)",stroke:"var(--ink)","stroke-width":1.6},g);
   el("polygon",{points:`${x},${y-r+3} ${x-6.5},${y+7.5} ${x},${y+2.5} ${x+6.5},${y+7.5}`,
     fill:"var(--ink)"},g);
