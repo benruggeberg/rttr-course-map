@@ -349,12 +349,40 @@ const DATA = {
     parking: "\u{1F17F}"
   },
 
+  // Course monitors carry their tactical name, not "Post 4": that is what
+  // gets said on the radio. The numbered circle keys them to the roster.
+  // Two volunteers are posted at each, plus extras at start/finish.
+  // Verify any coordinate change with: python3 scripts/check_markers.py
   markers: [
     { type:"water", at:[37.033704,-122.057780], num:1, label:"Water 1" },
     { type:"water", at:[37.024687,-122.053276], num:2, label:"Water 2" },
-    // { type:"volunteer", at:[37.0000,-122.0000], num:1, label:"Post 1", note:"Keep runners left" },
-    // { type:"music",     at:[37.0000,-122.0000], label:"Fiddle duo" },
-    // { type:"bigfoot",   at:[37.0000,-122.0000], label:"Bigfoot" },
+
+    // UNVERIFIED -- 56 m off route. OSM puts the River Trail x Eagle Creek
+    // junction at 37.030297,-122.055916 (21 m off route, mile 1.12).
+    { type:"volunteer", at:[37.030157,-122.054764], num:1, label:"Eagle",
+      note:"River Trail at Eagle Creek Trail" },
+    // UNVERIFIED -- 81 m off route. OSM has no "Redwood Grove Trail" nearby,
+    // so this one cannot be cross-checked against the trail network.
+    { type:"volunteer", at:[37.035856,-122.057746], num:2, label:"Indian",
+      note:"Redwood Grove Trail to Indian Creek" },
+    { type:"volunteer", at:[37.039297,-122.063832], num:3, label:"Junction",
+      note:"River Trail at Pipeline" },
+    // UNVERIFIED -- 664 m off route, and renders well outside the course.
+    // OSM shows Rincon Fire Rd and Ridge Fire Rd meeting at a shared node at
+    // 37.025934,-122.055312: 5 m off route, mile 1.54. Kept as recorded
+    // pending a check on the ground.
+    { type:"volunteer", at:[37.043600,-122.069740], num:4, label:"Rincon",
+      note:"Rincon Fire Rd and Ridge Fire Rd" },
+    { type:"volunteer", at:[37.018800,-122.043900], num:5, label:"Powder",
+      note:"Powder Mill Fire Rd and Pipeline Rd" },
+    { type:"volunteer", at:[37.026200,-122.046000], num:6, label:"Observation" },
+    { type:"volunteer", at:[37.022600,-122.042900], num:7, label:"Pine",
+      note:"Pine Trail and Powder Mill Fire Rd" },
+    { type:"volunteer", at:[37.029000,-122.051000], num:8, label:"Last mile" },
+
+    // Musician and Bigfoot positions are still to come -- no coordinates yet.
+    // { type:"music",   at:[37.0000,-122.0000], label:"Fiddle duo" },
+    // { type:"bigfoot", at:[37.0000,-122.0000], label:"Bigfoot" },
   ],
 
   // Mile markers are generated automatically from the track.
@@ -567,6 +595,7 @@ function drawSymbol(g, x, y, type, num){
    stacked on top of another is worse than no name. */
 let LABELS = [];
 let OBSTACLES = [];
+let OFF_SHEET = [];   // markers whose coordinate plots outside the course
 
 /* getBBox() ignores the element's own transform, so rotated trail names need
    their corners pushed through the matrix to get a true axis-aligned box. */
@@ -855,12 +884,26 @@ function drawMarkers(){
     music:group(map,"layer-music"), bigfoot:group(map,"layer-bigfoot"),
     other:group(map,"layer-terminus")
   };
+  // A marker whose coordinate is wrong projects outside the map area, where it
+  // would otherwise land on the title block or the legend and quietly wreck the
+  // sheet. Those are listed under the legend instead of being drawn in the
+  // wrong place or silently dropped -- the reader is told the post exists and
+  // that its coordinate needs checking.
+  const M = DATA.layout.margins;
+  const area = { x0:M.left-24, x1:VB.w-M.right+24, y0:VB.h*M.top-24, y1:mapFloor()+24 };
+  OFF_SHEET = [];
+
   let autoNum = 0;
   for(const m of (DATA.markers||[])){
     if(!m.at) continue;
     const [x,y]=PROJ.toXY(m.at[0],m.at[1]);
     const type=m.type||"volunteer";
     const g = groups[type] || groups.other;
+
+    if(x<area.x0 || x>area.x1 || y<area.y0 || y>area.y1){
+      OFF_SHEET.push(m.label || type);
+      continue;
+    }
 
     if(/start|finish/.test(type)){
       checkerFlag(g,x,y,m.label||type.toUpperCase());
@@ -1012,6 +1055,15 @@ function drawLegend(){
     txt(g,x0+38,y,it.text,{"dominant-baseline":"central","font-size":14,
       "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"var(--ink)"});
   });
+
+  // Anything that could not be plotted is named here rather than dropped, so
+  // nobody discovers on race morning that a post is missing from the map.
+  if(OFF_SHEET.length){
+    txt(g, b.x, b.y + b.h + 16,
+      `Not plotted — coordinate off course: ${OFF_SHEET.join(", ")}`,
+      {"font-size":10.5,"font-weight":600,
+       "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"var(--accent)"});
+  }
 }
 
 /* ODbL credit for the route and the OSM trail network. Not a toggleable
