@@ -54,7 +54,13 @@ NAME_FIXES = [
 # Dropped outright -- geometry and label both. Trail that adds nothing at this
 # scale or that the committee has asked not to show.
 DEFAULT_DROP = ["Ox Trail Path", "Ox Trail", "Ox Connector Trail",
-                "Residence Service Road"]
+                "Residence Service Road", "Meadow Trail"]
+
+# Trails kept at their full extent inside the bbox rather than clipped to the
+# course buffer. Ridge Fire Road is here because the stretch between Pipeline
+# Road and the Observation Deck is NOT part of the race, and a runner needs to
+# see the whole of it to understand that it is the wrong way.
+FULL_EXTENT = ["Ridge Fire Road"]
 
 # Ways we consider "trail". Henry Cowell tags its fire roads as track/service
 # and its singletrack as path/footway.
@@ -266,11 +272,18 @@ def main():
     ap.add_argument("--drop", default=",".join(DEFAULT_DROP),
                     help="comma-separated trails to remove entirely, geometry "
                          "and label both")
+    ap.add_argument("--label-clearance", type=float, default=32.0,
+                    help="metres a background trail name keeps from the race "
+                         "route, so it never reads as labelling the course")
+    ap.add_argument("--full-extent", default=",".join(FULL_EXTENT),
+                    help="trails drawn at full extent instead of clipped to the "
+                         "course buffer, so a wrong turn is visible end to end")
     ap.add_argument("--write", action="store_true", help="patch the HTML in place")
     args = ap.parse_args()
 
     excluded = {n.strip().lower() for n in args.exclude.split(",") if n.strip()}
     dropped = {n.strip().lower() for n in args.drop.split(",") if n.strip()}
+    full_extent = {n.strip().lower() for n in args.full_extent.split(",") if n.strip()}
 
     html_text = HTML.read_text(encoding="utf-8")
     track = read_track(html_text)
@@ -312,9 +325,11 @@ def main():
             continue
 
         # Clip to the buffer: keep contiguous runs of points near the course.
+        # Full-extent trails skip the clip entirely.
+        limit = 1e9 if (name and name.lower() in full_extent) else args.buffer
         runs, cur = [], []
         for la, lo in geom:
-            if dist_to_route(proj(la, lo), route_xy) <= args.buffer:
+            if dist_to_route(proj(la, lo), route_xy) <= limit:
                 cur.append((la, lo))
             else:
                 if len(cur) >= 2:
@@ -388,6 +403,32 @@ def main():
         elif t["length"] > cur["length"]:
             by_name[key] = t
 
+    def label_path(t):
+        """The stretch of a trail its name should sit on.
+
+        A background trail that crosses the course must not be captioned at the
+        crossing: the name lands across the race line and reads as if it named
+        the race. So its label runs along the longest stretch that stays well
+        clear of the route. Course trails keep their full path -- the route is
+        what they name.
+        """
+        if t["on_course"]:
+            return t["path"]
+        runs, cur = [], []
+        for la, lo in t["path"]:
+            if dist_to_route(proj(la, lo), route_xy) > args.label_clearance:
+                cur.append((la, lo))
+            else:
+                if len(cur) >= 2:
+                    runs.append(cur)
+                cur = []
+        if len(cur) >= 2:
+            runs.append(cur)
+        if not runs:
+            return t["path"]
+        best = max(runs, key=lambda r: path_length([proj(la, lo) for la, lo in r]))
+        return [[round(la, 6), round(lo, 6)] for la, lo in best]
+
     def anchor(t):
         """Label anchor and on-sheet bearing for one segment."""
         xy, ll = t["xy"], t["path"]
@@ -411,7 +452,8 @@ def main():
                           key=lambda kv: (kv[0].lower() not in course_names, -kv[1]["length"])):
         at, rot = anchor(t)
         on = name.lower() in course_names
-        labels.append({"text": name.upper(), "at": at, "rotate": rot, "onCourse": on})
+        labels.append({"text": name.upper(), "at": at, "rotate": rot,
+                       "onCourse": on, "path": label_path(t)})
 
         # A long trail the course follows for miles reads better labelled more
         # than once -- a reader should not have to trace the line back to find
@@ -425,7 +467,8 @@ def main():
                 if all(math.dist(proj(*at2), proj(*l["at"])) > args.repeat_gap
                        for l in labels if l["text"] == name.upper()):
                     labels.append({"text": name.upper(), "at": at2,
-                                   "rotate": rot2, "onCourse": on})
+                                   "rotate": rot2, "onCourse": on,
+                                   "path": label_path(o)})
                     break
 
     trails_src = ",\n".join(
@@ -436,9 +479,10 @@ def main():
         for t in geom
     )
     names_src = ",\n".join(
-        '    { text:%s, at:[%s,%s], rotate:%s%s }' % (
+        '    { text:%s, at:[%s,%s], rotate:%s%s, path:%s }' % (
             json.dumps(l["text"]), l["at"][0], l["at"][1], l["rotate"],
-            ", onCourse:true" if l["onCourse"] else "")
+            ", onCourse:true" if l["onCourse"] else "",
+            "[" + ",".join("[%s,%s]" % (p[0], p[1]) for p in l["path"]) + "]")
         for l in labels
     )
 

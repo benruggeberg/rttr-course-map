@@ -31,7 +31,8 @@ JS = """
 (panels) => {
   const out = { points: [], panels: {},
                 trailNames: DATA.trailNames.length,
-                trailNamesDrawn: document.querySelectorAll('.layer-trailname text').length };
+                trailNamesDrawn: new Set([...document.querySelectorAll('.layer-trailname text')]
+                    .map(n => n.textContent.trim()).filter(Boolean)).size };
   // The projected route, straight from the live projection.
   for (const [la, lo] of TRACK) out.points.push(PROJ.toXY(la, lo));
   for (const cls of panels) {
