@@ -319,7 +319,11 @@ const DATA = {
     // there costs more legibility than it buys.
     "RIDGE FIRE RD":            { placement:"block", wrap:14, rotate:-14,
                                   offset:[-58,24] },
-    "POWDER MILL FIRE RD":      { between:["Powder","Pine"], dy:16 },
+    // Powder->Pine is only 155 units against 166 of text, so it silently fell
+    // back to straight. Powder->Observation gives 313 and stays monotonic;
+    // startOffset biases the name back down into the 5-to-7 stretch.
+    "POWDER MILL FIRE RD":      { between:["Powder","Observation"],
+                                  startOffset:27, dy:-16 },
     "PINE TRAIL":               { placement:"block", wrap:10, offset:[74,104] },
     "POWDER MILL TRAIL":        { dy:-6,  startOffset:70 }
   },
