@@ -1,8 +1,11 @@
 # RTTR Operations Course Map
 
-Single-file operations course map for **Race Thru The Redwoods**, a 10K trail
-run starting and finishing at Roaring Camp Railroads and running through Henry
+Single-file operations course map for **Race Thru The Redwoods**, a trail run
+starting and finishing at Roaring Camp Railroads and running through Henry
 Cowell Redwoods State Park.
+
+The sheet says "Course Route", not "10K": the course is close to 10K but is not
+a measured one, and a printed handout should not claim otherwise.
 
 The sheet deliberately carries no year and no date, so the same file can be
 reused next year by updating markers alone. Set `DATA.meta.date` if a dated
@@ -36,7 +39,8 @@ click the map; the sidebar emits a pre-formatted `DATA.markers` line.
 
 Verified against the baked-in track — don't re-derive:
 
-- 450 track points, **6.28 mi / 10.11 km**, **907 ft gain**, high point 797 ft
+- 450 track points, **6.28 mi / 10.11 km** measured, **907 ft gain**, high
+  point 797 ft
 - Start and finish are **105 m apart**, not coincident — two flags, not one
 - Track and per-point elevation are baked into `DATA.track` / `DATA.ele`;
   `RTTR-10k-course.gpx` is kept only for re-import

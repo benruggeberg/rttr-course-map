@@ -323,7 +323,9 @@ const DATA = {
     // Deliberately carries no year and no date, so the same sheet can be
     // reused next year without editing anything but the markers.
     title:    "Race Thru The Redwoods",
-    subtitle: "10K Course · Henry Cowell Redwoods State Park",
+    // Deliberately not called a 10K: the course is close to it but not a
+    // measured 10K, and a printed sheet should not claim otherwise.
+    subtitle: "Course Route · Henry Cowell Redwoods State Park",
     date:     "",
     sheetNote:"",
     // Trails come from the California State Parks trail layer (unit 418), the
@@ -474,7 +476,7 @@ const DATA = {
     // back to straight. Powder->Observation gives 313 and stays monotonic;
     // startOffset biases the name back down into the 5-to-7 stretch.
     "POWDER MILL FIRE RD":      { startOffset:44, dy:-38, smooth:14 },
-    "PINE TRAIL":               { placement:"block", wrap:5, offset:[-64,128] },
+    "PINE TRAIL":               { smooth:10, startOffset:80, dy:-22 },
     "POWDER MILL TRAIL":        { dy:-6,  startOffset:70 },
     "EAGLE CREEK TRAIL":        { startOffset:58, smooth:10 },
     "RINCON FIRE RD":           { smooth:10, startOffset:32 }
@@ -1697,19 +1699,17 @@ function drawLegend(){
   // Each entry names the layer it describes, so a switched-off feature drops
    // out of the key instead of promising something the map is not showing.
   const all = [
-    {type:"route",     layer:"route",     text:"Race route (10K)"},
+    {type:"route",     layer:"route",     text:"Course Route"},
     {type:"arrow",     layer:"arrows",    text:"Direction of travel"},
     {type:"volunteer", layer:"vol",       text:"Volunteer post (numbered)"},
     {type:"water",     layer:"water",     text:"Water station"},
     {type:"music",     layer:"music",     text:"Musician"},
     {type:"bigfoot",   layer:"bigfoot",   text:"Bigfoot"},
-    {type:"viewpoint", layer:"viewpoint", text:"Viewpoint"},
     {type:"mile",      layer:"mile",      text:"Mile marker"},
     {type:"trail",     layer:"trails",    text:"Other park trail"},
     {type:"river",     layer:"river",     text:"River, creek & pond"},
     {type:"rail",      layer:"rail",      text:"Railway / trestle"},
     {type:"road",      layer:"roads",     text:"Road (Hwy 9)"},
-    {type:"visitor",   layer:"viewpoint", text:"Visitor center"},
     {type:"contour",   layer:"terrain",   text:"Contour (20 m)"}
   ];
   const items = all.filter(it => !map.classList.contains("off-"+it.layer));
