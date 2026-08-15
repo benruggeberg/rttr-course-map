@@ -59,13 +59,15 @@ NAME_FIXES = [
 DEFAULT_DROP = ["Ox Trail Path", "Ox Trail", "Ox Connector Trail",
                 "Residence Service Road", "Meadow Trail"]
 
-# Trails kept at their full extent inside the bbox rather than clipped to the
-# course buffer. Ridge Fire Road is here because the stretch between Pipeline
-# Road and the Observation Deck is NOT part of the race, and a runner needs to
-# see the whole of it to understand that it is the wrong way.
+# Trails shown further than the ordinary buffer, because a trail that stops
+# dead reads as a dead end rather than a clip. This is a wider buffer, not an
+# unlimited one -- removing the clip entirely let these sprawl across the whole
+# sheet and swamp the course.
 # Eagle Creek Trail is here so it does not stop dead at the buffer edge --
 # a trail that ends abruptly reads as a dead end rather than a clip.
-FULL_EXTENT = ["Ridge Fire Road", "Eagle Creek Trail"]
+FULL_EXTENT = ["Ridge Fire Road", "Eagle Creek Trail", "River Trail",
+               "Rincon Fire Road", "Big Rock Hole Trail", "Pine Trail",
+               "Ridge Fire Road/Campgroudn Road Connector"]
 
 # Ways we consider "trail". Henry Cowell tags its fire roads as track/service
 # and its singletrack as path/footway.
@@ -283,8 +285,11 @@ def main():
                     help="metres a background trail name keeps from the race "
                          "route, so it never reads as labelling the course")
     ap.add_argument("--full-extent", default=",".join(FULL_EXTENT),
-                    help="trails drawn at full extent instead of clipped to the "
-                         "course buffer, so a wrong turn is visible end to end")
+                    help="trails shown to --extended-buffer instead of the "
+                         "ordinary buffer, so they do not stop dead")
+    ap.add_argument("--extended-buffer", type=float, default=430.0,
+                    help="metres from the course for the trails named on "
+                         "--full-extent")
     ap.add_argument("--write", action="store_true", help="patch the HTML in place")
     args = ap.parse_args()
 
@@ -333,8 +338,8 @@ def main():
             continue
 
         # Clip to the buffer: keep contiguous runs of points near the course.
-        # Full-extent trails skip the clip entirely.
-        limit = 1e9 if (name and name.lower() in full_extent) else args.buffer
+        limit = (args.extended_buffer
+                 if (name and name.lower() in full_extent) else args.buffer)
         runs, cur = [], []
         for la, lo in geom:
             if dist_to_route(proj(la, lo), route_xy) <= limit:

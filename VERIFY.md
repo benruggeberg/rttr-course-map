@@ -56,6 +56,11 @@ two sources do not agree everywhere:
   Gold Gulch creeks. Strahler stream order drives line weight.
 - **Terrain** — USGS 10 m NED sampled on a 45 m grid and traced to 20 m
   contours by `scripts/fetch_terrain.py`.
+- **Railway and ponds** — the Santa Cruz, Big Trees & Pacific from OSM and
+  NHD waterbodies, via `scripts/fetch_features.py`. Bridge segments are
+  tagged so the San Lorenzo trestle draws heavier than plain track.
+- **Visitor centre** — California State Parks facility point,
+  `37.039185, -122.063383`.
 
 ## Print QA — done
 
