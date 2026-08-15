@@ -309,13 +309,16 @@ const DATA = {
   //   offset     [dx,dy] nudge in sheet units after placement
   trailNameOverrides: {
     "REDWOOD GROVE LOOP TRAIL": { placement:"centroid", wrap:12 },
-    "RIVER TRAIL":              { dy:21 },
-    "PIPELINE ROAD":            { dy:-18 },
+    "RIVER TRAIL":              { dy:13 },
+    "PIPELINE ROAD":            { dy:14 },
+    "PIPELINE ROAD#1":          { startOffset:34 },
     // Left single-line on purpose. Two lines along a curving path each follow
     // a different radius, so they splay apart and collide; the split feature
     // still exists and works where a trail runs straight.
-    "RIDGE FIRE ROAD":          { dy:-17 },
-    "POWDER MILL FIRE ROAD":    { dy:-25, startOffset:20 },
+    // Straight and wrapped: both switchback hard, and following the contour
+    // there costs more legibility than it buys.
+    "RIDGE FIRE ROAD":          { placement:"block", wrap:6, offset:[-74,-6] },
+    "POWDER MILL FIRE ROAD":    { placement:"block", wrap:12, offset:[92,16] },
     "PINE TRAIL":               { dy:-7,  startOffset:64 },
     "POWDER MILL TRAIL":        { dy:-6,  startOffset:70 }
   },
@@ -946,18 +949,57 @@ function drawDirectionArrows(pts){
   }
 }
 
+/* A polyline pushed sideways by `d` units. Used to give a trail name its own
+   guide line clear of the trail, because dy on <textPath> is not honoured
+   reliably and was silently doing nothing. */
+function offsetPath(pts, d){
+  if(!d || pts.length < 2) return pts;
+  const out = [];
+  for(let i=0;i<pts.length;i++){
+    const a = pts[Math.max(0,i-1)], b = pts[Math.min(pts.length-1,i+1)];
+    let dx = b[0]-a[0], dy = b[1]-a[1];
+    const len = Math.hypot(dx,dy) || 1;
+    dx/=len; dy/=len;
+    // left-hand normal in screen coords (y grows downward)
+    out.push([pts[i][0] + dy*d, pts[i][1] - dx*d]);
+  }
+  return out;
+}
+
 function drawTrailNames(){
   const g = group(map,"layer-trailname");
   const defs = map.querySelector("defs");
   let n = 0;
 
+  let seen = {};
   for(const gen of (DATA.trailNames||[])){
-    const t = Object.assign({}, gen, (DATA.trailNameOverrides||{})[gen.text] || {});
+    // A trail labelled more than once needs each instance tunable separately,
+    // so "NAME#0" / "NAME#1" override a single one and "NAME" overrides all.
+    const idx = (seen[gen.text] = (seen[gen.text] ?? -1) + 1);
+    const ov = DATA.trailNameOverrides || {};
+    const t = Object.assign({}, gen, ov[gen.text] || {}, ov[gen.text+"#"+idx] || {});
     const st = (t.onCourse ? DATA.trailNameStyle.onCourse : DATA.trailNameStyle.other);
     const [ax,ay] = PROJ.toXY(t.at[0],t.at[1]);
 
     // Loop trails read better as a block in the middle of the loop than as
     // text smeared around its curve.
+    // "block" sets the name as straight wrapped text at its anchor. For a
+    // trail that switchbacks, following the contour costs more legibility
+    // than it buys.
+    if(t.placement === "block"){
+      const lines = wrapText(t.text, t.wrap || 12);
+      const block = el("g",{},g);
+      let bx = ax, by = ay;
+      if(t.offset){ bx += t.offset[0]; by += t.offset[1]; }
+      lines.forEach((ln,i)=>txt(block,bx,by+(i-(lines.length-1)/2)*st.size*1.15,ln,{
+        "text-anchor":"middle","font-size":st.size,"font-weight":st.weight,
+        "letter-spacing":st.track,"font-family":"Barlow Semi Condensed, Arial, sans-serif",
+        fill:st.fill, class:"halo"}));
+      LABELS.push({ node:block, manual:true, droppable:false,
+                    routeCost: t.onCourse ? 0 : COST_ROUTE_OFFCOURSE });
+      continue;
+    }
+
     if(t.placement === "centroid"){
       const pts = (t.path||[]).map(([la,lo])=>PROJ.toXY(la,lo));
       let cx=ax, cy=ay;
@@ -985,8 +1027,13 @@ function drawTrailNames(){
       const run = pts[pts.length-1][0] - pts[0][0];
       const ordered = run < 0 ? [...pts].reverse() : pts;
       const id = "tn"+(n++);
+      const lift0 = t.dy != null ? t.dy : (t.onCourse ? -13 : -5);
+      // Reversing a right-to-left path also flips its normal, which would put
+      // two labels of the same trail on opposite sides of it. Negate to keep
+      // dy meaning the same visual side whichever way the path runs.
+      const guide = offsetPath(ordered, run < 0 ? -lift0 : lift0);
       el("path",{id, fill:"none", stroke:"none",
-        d: ordered.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ")}, defs);
+        d: guide.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ")}, defs);
 
       // A course trail's line is 11.5 units of casing plus a 6-unit stroke, so
       // its name has to clear roughly half of that or it sits in the black.
@@ -1006,8 +1053,12 @@ function drawTrailNames(){
           "font-size":st.size,"font-weight":st.weight,"letter-spacing":st.track,
           "font-family":"Barlow Semi Condensed, Arial, sans-serif",
           fill:st.fill, class:"halo", "text-anchor":"middle"}, holder);
-        const tp = el("textPath",{"startOffset": (t.startOffset || 50) + "%",
-          dy: (lifts[pi] != null ? lifts[pi] : lift)}, line);
+        // The guide path already carries the offset; splitDy still stacks
+        // multiple lines relative to it.
+        const extra = t.splitDy ? (lifts[pi] || 0) : 0;
+        const tp = el("textPath",Object.assign(
+          {"startOffset": (t.startOffset || 50) + "%"},
+          extra ? {dy: extra} : {}), line);
         tp.setAttributeNS("http://www.w3.org/1999/xlink","href","#"+id);
         tp.setAttribute("href","#"+id);
         tp.textContent = part;
