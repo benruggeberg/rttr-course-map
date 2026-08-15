@@ -125,7 +125,7 @@ body{
    photocopied handout, which is the one output this theme exists for. */
 /* Background trail names go darker here than on screen: a mid grey that reads
    fine on a monitor drops out entirely once the sheet has been photocopied. */
-.theme-mono {--route:#000000;--trail:#b0b0b0;--water:#000;--vol:#000;--music:#000;--bigfoot:#000;--accent:#000;--trail-label:#6e6e6e;--river:#9a9a9a}
+.theme-mono {--route:#000000;--trail:#b0b0b0;--water:#000;--vol:#000;--music:#000;--bigfoot:#000;--accent:#000;--trail-label:#6e6e6e;--river:#b6b6b6}
 .theme-mono .marker-fill{fill:#fff}
 /* Poster palette: pale sage paper, deep understory green, redwood-bark accent.
    Grounded in the park itself rather than a generic warm-cream treatment. */
@@ -220,6 +220,7 @@ body{
     <input type="file" id="gpxFile" accept=".gpx,application/gpx+xml" hidden>
     <button id="bakeBtn">Copy track for DATA block</button>
     <p class="hint" id="trackInfo">No track loaded.</p>
+    <p class="hint" id="plotWarn" style="color:#e0a05a"></p>
   </fieldset>
 
   <fieldset>
@@ -418,7 +419,7 @@ const DATA = {
     // startOffset biases the name back down into the 5-to-7 stretch.
     "POWDER MILL FIRE RD":      { between:["Powder","Observation"],
                                   startOffset:27, dy:-16 },
-    "PINE TRAIL":               { placement:"block", wrap:10, offset:[74,104] },
+    "PINE TRAIL":               { placement:"block", wrap:10, offset:[36,116] },
     "POWDER MILL TRAIL":        { dy:-6,  startOffset:70 }
   },
 
@@ -472,22 +473,30 @@ const DATA = {
     { type:"water", at:[37.033704,-122.057780], num:1, label:"Water 1", offset:[0,0] },
     { type:"water", at:[37.024687,-122.053276], num:2, label:"Water 2", offset:[0,0] },
 
-    // UNVERIFIED -- 56 m off route. OSM puts the River Trail x Eagle Creek
-    // junction at 37.030297,-122.055916 (21 m off route, mile 1.12).
-    { type:"volunteer", at:[37.030157,-122.054764], num:1, label:"Eagle",
+    // SNAPPED to the course. Recorded as 37.030157,-122.054764, 56 m off
+    // route. Neither trail source can verify this junction -- State Parks has
+    // no "River Trail" and OSM's answer sits on the other pass of an
+    // out-and-back -- so the route itself is the authority: a course monitor
+    // stands on the course. Only the perpendicular error was removed; the
+    // along-course position is unchanged.
+    { type:"volunteer", at:[37.030250,-122.054140], num:1, label:"Eagle",
       note:"River Trail at Eagle Creek Trail" },
-    // UNVERIFIED -- 81 m off route. OSM has no "Redwood Grove Trail" nearby,
-    // so this one cannot be cross-checked against the trail network.
-    { type:"volunteer", at:[37.035856,-122.057746], num:2, label:"Indian",
+    // SNAPPED to the course. Recorded as 37.035856,-122.057746, 81 m off
+    // route. No source has both trails: State Parks carries Redwood Grove Loop
+    // but no Indian Creek, OSM carries Indian Creek but no Redwood Grove, so
+    // the junction cannot be computed. Snapped to the nearest point on the
+    // route, which preserves the along-course position at mile 5.89.
+    { type:"volunteer", at:[37.036280,-122.058480], num:2, label:"Indian",
       note:"Redwood Grove Trail to Indian Creek", nudge:[-26,10], offset:[9,0] },
     { type:"volunteer", at:[37.039297,-122.063832], num:3, label:"Junction",
       note:"River Trail at Pipeline", side:"above", offset:[0,-2] },
-    // UNVERIFIED -- 664 m off route, and renders well outside the course.
-    // OSM shows Rincon Fire Rd and Ridge Fire Rd meeting at a shared node at
-    // 37.025934,-122.055312: 5 m off route, mile 1.54. Kept as recorded
-    // pending a check on the ground.
-    { type:"volunteer", at:[37.043600,-122.069740], num:4, label:"Rincon",
-      note:"Rincon Fire Rd and Ridge Fire Rd" },
+    // CORRECTED. Recorded as 37.043600,-122.069740, which is 664 m off the
+    // course and plotted clear off the sheet. Two independent sources put the
+    // Rincon Fire Rd x Ridge Fire Rd junction within 2 m of each other:
+    // California State Parks 37.025948,-122.055330 and OSM 37.025934,-122.055312.
+    // 6 m off route at mile 1.54. Original is recorded in VERIFY.md.
+    { type:"volunteer", at:[37.025948,-122.055330], num:4, label:"Rincon",
+      note:"Rincon Fire Rd and Ridge Fire Rd", side:"left", offset:[-6,-4] },
     { type:"volunteer", at:[37.018800,-122.043900], num:5, label:"Powder",
       note:"Powder Mill Fire Rd and Pipeline Rd" },
     { type:"volunteer", at:[37.026200,-122.046000], num:6, label:"Observation",
@@ -523,8 +532,10 @@ const DATA = {
   // Mile markers are generated automatically from the track. They are
   // deliberately understated: a volunteer needs to find their post, not their
   // split, so posts read first and the mile squares sit behind them.
+  // `nudge` shifts one mile square by sheet units where the course doubles
+  // back and a post lands on top of it. Mile 4 sits under post 5.
   mileMarkers: { show:true, unit:"mi", size:7.5, stroke:1.5, font:9.5,
-                 fill:"var(--trail-label)" },
+                 fill:"var(--trail-label)", nudge:{ "4":[26,20] } },
 
   // Direction arrows spaced evenly along the route.
   // `extra` adds arrows at named fractions along the course, for stretches
@@ -889,6 +900,15 @@ function render(){
 
   el("rect",{x:0,y:0,width:VB.w,height:VB.h,fill:"var(--paper)"},map);
 
+  // Background layers are clipped to the map area. The river and the contours
+  // extend past the course on all sides -- without this the San Lorenzo runs
+  // straight down through the volunteer brief panel.
+  const M0 = DATA.layout.margins;
+  const cp = el("clipPath",{id:"mapArea"},defs);
+  el("rect",{x:M0.left-14, y:VB.h*M0.top-14,
+    width:VB.w-M0.left-M0.right+28,
+    height:VB.h*(1-M0.top-M0.bottom)+28},cp);
+
   // A dropped .gpx overrides the baked-in course; otherwise use DATA.track.
   if(!TRACK.length && DATA.track?.length) TRACK = DATA.track;
   PROJ  = buildProjection(TRACK);
@@ -933,6 +953,14 @@ function render(){
   drawTrailNames();
   placeLabels();
   drawCredit();
+
+  // A marker whose coordinate lands outside the map is reported on screen, to
+  // whoever maintains the file. It is deliberately kept off the sheet: a
+  // printed handout should carry the course, not the mapmaker's warnings.
+  const warn = document.getElementById("plotWarn");
+  if(warn) warn.textContent = OFF_SHEET.length
+    ? "Not plotted — coordinate off course: " + OFF_SHEET.join(", ")
+    : "";
 }
 
 /* Terrain, drawn first so everything else sits on top of it. Index contours
@@ -942,19 +970,21 @@ function render(){
    San Lorenzo reads as a river without anyone hand-tuning widths. */
 function drawWater(){
   const g = group(map,"layer-river");
+  g.setAttribute("clip-path","url(#mapArea)");
   for(const w of (DATA.water||[])){
     if(!w.path || w.path.length<2) continue;
     const d = w.path.map(([la,lo],i)=>{
       const [x,y]=PROJ.toXY(la,lo); return (i?"L":"M")+x.toFixed(1)+","+y.toFixed(1);
     }).join(" ");
     el("path",{d,fill:"none",stroke:"var(--river)",
-      "stroke-width": w.order>=6 ? 4.2 : (w.order>=3 ? 2.4 : 1.5),
+      "stroke-width": w.order>=6 ? 3.0 : (w.order>=3 ? 1.8 : 1.2),
       "stroke-linejoin":"round","stroke-linecap":"round"},g);
   }
 }
 
 function drawContours(){
   const g = group(map,"layer-terrain");
+  g.setAttribute("clip-path","url(#mapArea)");
   for(const c of (DATA.contours||[])){
     for(const path of (c.paths||[])){
       if(path.length < 2) continue;
@@ -972,6 +1002,7 @@ function drawContours(){
 
 function drawOtherTrails(){
   const g = group(map,"layer-trails");
+  g.setAttribute("clip-path","url(#mapArea)");
   for(const t of (DATA.trails||[])){
     if(!t.path || t.path.length<2) continue;
     const d = t.path.map(([la,lo],i)=>{
@@ -1268,8 +1299,10 @@ function drawMileMarkers(){
       const t=(next-dist)/(seg||1);
       const lat = TRACK[i-1][0]+(TRACK[i][0]-TRACK[i-1][0])*t;
       const lon = TRACK[i-1][1]+(TRACK[i][1]-TRACK[i-1][1])*t;
-      const [x,y]=PROJ.toXY(lat,lon);
+      let [x,y]=PROJ.toXY(lat,lon);
       const ms = DATA.mileMarkers;
+      const n = ms.nudge && ms.nudge[String(Math.round(next/step))];
+      if(n){ x += n[0]; y += n[1]; }
       const box = el("rect",{x:x-ms.size,y:y-ms.size,width:ms.size*2,height:ms.size*2,
         rx:2,fill:"var(--paper)",stroke:ms.fill,"stroke-width":ms.stroke},g);
       addObstacle(box);
@@ -1318,7 +1351,7 @@ function drawMarkers(){
 
     if(x<area.x0 || x>area.x1 || y<area.y0 || y>area.y1){
       OFF_SHEET.push(m.label || type);
-      continue;
+      continue;   // reported in the sidebar, never printed on the sheet
     }
 
     if(/start|finish/.test(type)){
@@ -1381,7 +1414,7 @@ function drawMarkers(){
 
 function drawTitle(){
   const g = group(map,"layer-title");
-  const pad=70, y=VB.h*0.052;
+  const pad=70, y=VB.h*0.060;
   txt(g,pad,y,DATA.meta.title.toUpperCase(),{
     class:"map-title","font-size":VB.w*0.036,"dominant-baseline":"auto"});
   txt(g,pad,y+VB.w*0.026,DATA.meta.subtitle,{
@@ -1522,21 +1555,13 @@ function drawLegend(){
       "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"var(--ink)"});
   });
 
-  // Anything that could not be plotted is named here rather than dropped, so
-  // nobody discovers on race morning that a post is missing from the map.
-  if(OFF_SHEET.length){
-    txt(g, b.x, b.y + b.h + 16,
-      `Not plotted — coordinate off course: ${OFF_SHEET.join(", ")}`,
-      {"font-size":10.5,"font-weight":600,
-       "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"var(--accent)"});
-  }
 }
 
 /* ODbL credit for the route and the OSM trail network. Not a toggleable
    layer: the licence requires it wherever the data appears. */
 function drawCredit(){
   const g = group(map,"layer-credit");
-  txt(g, VB.w-DATA.layout.margins.right, VB.h-13,
+  txt(g, VB.w-DATA.layout.margins.right, VB.h-34,
     DATA.meta.credit,
     {"text-anchor":"end","font-size":10.5,
      "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"#8a8a8a"});

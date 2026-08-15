@@ -2,38 +2,31 @@
 
 Run `python3 scripts/check_markers.py` to regenerate the distance column.
 
-## Course monitor coordinates to check on the ground
+## Course monitor coordinates — resolved
 
-Three of the eight monitor positions sit further off the route than a
-hand-clicked coordinate normally lands. They are **kept exactly as recorded**
-in the planning sheet — the numbers below are what the map data says, not
-corrections that have been applied.
+Three of the eight monitor positions sat further off the route than a
+hand-clicked coordinate normally lands. All three have been corrected; the
+originals are recorded here so the change is reversible.
 
-| Post | Recorded | Off route | Renders at | Note |
-| --- | --- | --- | --- | --- |
-| Rincon (4) | 37.043600, -122.069740 | **664 m** | mile 0.25 | Renders well outside the course |
-| Indian (2) | 37.035856, -122.057746 | 81 m | mile 5.89 | |
-| Eagle (1) | 37.030157, -122.054764 | 56 m | mile 5.36 | |
+| Post | Recorded | Now | Why |
+| --- | --- | --- | --- |
+| Rincon (4) | 37.043600, -122.069740 (**664 m** off) | 37.025948, -122.055330 (6 m off, mile 1.54) | Corrected to the real junction |
+| Indian (2) | 37.035856, -122.057746 (81 m off) | 37.036280, -122.058480 (on route, mile 5.89) | Snapped to the course |
+| Eagle (1) | 37.030157, -122.054764 (56 m off) | 37.030250, -122.054140 (on route, mile 5.36) | Snapped to the course |
 
-The other five (Junction, Powder, Observation, Pine, Last mile) and both water
-stations are within 20 m of the route and need no attention.
+**Rincon** was not a judgement call. Two independent authorities put the
+Rincon Fire Rd x Ridge Fire Rd junction within 2 m of each other — California
+State Parks at `37.025948,-122.055330` and OSM at `37.025934,-122.055312` —
+and the recorded coordinate was 664 m away, plotting clear off the sheet.
 
-### What OpenStreetMap says about those junctions
+**Eagle and Indian could not be verified from any trail source**, because no
+single source carries both trails of either junction: State Parks has Eagle
+Creek Trail but no River Trail, and Redwood Grove Loop but no Indian Creek;
+OSM has the mirror-image gaps. So the route itself was used as the authority —
+a course monitor stands on the course. Only the perpendicular error was
+removed; the along-course position of each is unchanged.
 
-Cross-checked against the named trail network, for whoever walks these:
-
-- **Rincon Fire Rd × Ridge Fire Rd** — the two ways share a node at
-  `37.025934, -122.055312`. That is 5 m off the route at **mile 1.54**. The
-  recorded coordinate would place the post at mile 0.25, near the start.
-- **River Trail × Eagle Creek Trail** — junction at `37.030297, -122.055916`,
-  21 m off the route at **mile 1.12**.
-- **Redwood Grove Trail** does not exist under that name in OSM here, so the
-  Indian post cannot be cross-checked against the trail network. Worth
-  confirming the trail name as well as the coordinate.
-
-Note the route passes some of this ground twice, so a coordinate can be
-genuinely correct while the "renders at" mile looks surprising — the nearest
-track point may be on the return leg.
+Worth a glance on the ground, but nothing here now plots off the course.
 
 ## Trail source disagreements
 
@@ -53,8 +46,6 @@ two sources do not agree everywhere:
 
 - **Musician** — no coordinates yet.
 - **Big Foot Actor** — no coordinates yet.
-- **Course_Monitor_8** — descriptive location is still the placeholder
-  "Last mile".
 - **Radio channel and course-lead phone** — deliberately blank rules on the
   printed sheet, to be filled in by hand on race morning.
 
@@ -65,6 +56,32 @@ two sources do not agree everywhere:
   Gold Gulch creeks. Strahler stream order drives line weight.
 - **Terrain** — USGS 10 m NED sampled on a 45 m grid and traced to 20 m
   contours by `scripts/fetch_terrain.py`.
+
+## Print QA — done
+
+Checked against the generated PDFs, not the screen.
+
+| Check | Result |
+| --- | --- |
+| Page size | 8.50 x 11.00 in and 24.00 x 36.00 in exactly |
+| Page count | one page each, including when printed while zoomed to 300% |
+| 0.25" printer margin | clear; title and credit were inside it and were moved |
+| Grayscale legibility | every feature distinguishable by shape or number alone |
+| Emoji rasterise | yes — 16 embedded images in the poster PDF, 0 in the volunteer sheet, which uses drawn shapes |
+| Fonts | Anton and Barlow embedded and subsetted into both PDFs |
+| All mile squares visible | yes — mile 4 was hidden under post 5 and is nudged clear |
+
+Fixed during QA:
+- The San Lorenzo ran straight down through the volunteer brief panel. Terrain,
+  water and trails are now clipped to the map area.
+- The river was too heavy in mono and competed with the route. Lightened and
+  thinned; it now reads as clearly subordinate.
+- Pine Trail's label ran past the right edge of the sheet.
+- Rincon's label collided with the Observation post after Rincon was corrected.
+
+One loose end: the volunteer PDF embeds Arial Bold alongside Barlow. The
+musician glyph is a music note that Barlow does not carry, so it falls back.
+It renders correctly here but would differ on a machine without Arial.
 
 ## Known cosmetic issues
 
