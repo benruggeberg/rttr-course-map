@@ -283,7 +283,7 @@ const DATA = {
     { name:"Pine Trail", path:[[37.026081,-122.045919],[37.026387,-122.045773],[37.026676,-122.046512],[37.026839,-122.046755],[37.027152,-122.045492],[37.027408,-122.044861],[37.027727,-122.044838],[37.027856,-122.045015],[37.027984,-122.045407],[37.02819,-122.04548]] },
     { name:"Pine Trail", path:[[37.023606,-122.044754],[37.023661,-122.044545],[37.023775,-122.044397],[37.02398,-122.044241],[37.02427,-122.044161],[37.024512,-122.044595],[37.024599,-122.045031],[37.024664,-122.045104],[37.025405,-122.045498],[37.025983,-122.045382]] },
     { name:null, path:[[37.026065,-122.04392],[37.026491,-122.043345],[37.02696,-122.042977],[37.027272,-122.042918],[37.027747,-122.043141],[37.027961,-122.043494],[37.028025,-122.043861],[37.028195,-122.04391]] },
-    { name:"Big Rock Hole Trail", path:[[37.02346,-122.055115],[37.023979,-122.055029],[37.024275,-122.055093],[37.024578,-122.05494],[37.025,-122.054896],[37.025948,-122.05533]] },
+    { name:null, path:[[37.02346,-122.055115],[37.023979,-122.055029],[37.024275,-122.055093],[37.024578,-122.05494],[37.025,-122.054896],[37.025948,-122.05533]] },
     { name:"Buckeye Trail", path:[[37.017479,-122.045181],[37.01753,-122.045099],[37.017566,-122.044628],[37.017776,-122.044657],[37.01809,-122.044463],[37.018456,-122.044422],[37.018686,-122.04422],[37.018785,-122.044059],[37.018764,-122.044002]] },
     { name:"Powder Mill Trail", path:[[37.018402,-122.041632],[37.018585,-122.04228],[37.018493,-122.042493],[37.018514,-122.042954],[37.018764,-122.043627]] },
     { name:null, path:[[37.035026,-122.058804],[37.035353,-122.058575],[37.035615,-122.058626],[37.035815,-122.058753],[37.036101,-122.059271]] },
@@ -317,9 +317,9 @@ const DATA = {
     // still exists and works where a trail runs straight.
     // Straight and wrapped: both switchback hard, and following the contour
     // there costs more legibility than it buys.
-    "RIDGE FIRE ROAD":          { placement:"block", wrap:6, offset:[-74,-6] },
-    "POWDER MILL FIRE ROAD":    { placement:"block", wrap:12, offset:[92,16] },
-    "PINE TRAIL":               { dy:-7,  startOffset:64 },
+    "RIDGE FIRE ROAD":          { placement:"block", wrap:10, offset:[128,-52] },
+    "POWDER MILL FIRE ROAD":    { placement:"block", wrap:12, offset:[-96,-62] },
+    "PINE TRAIL":               { placement:"block", wrap:10, offset:[36,74] },
     "POWDER MILL TRAIL":        { dy:-6,  startOffset:70 }
   },
 
@@ -336,7 +336,6 @@ const DATA = {
     { text:"RINCON FIRE ROAD", at:[37.027808,-122.056296], rotate:78.6, path:[[37.029427,-122.052162],[37.029196,-122.052442],[37.028648,-122.052678],[37.028305,-122.053142],[37.028211,-122.053748],[37.027919,-122.054389],[37.027549,-122.054762],[37.027622,-122.05528]] },
     { text:"PINE TRAIL", at:[37.023435,-122.04184], rotate:-65.8, path:[[37.025668,-122.041318],[37.025453,-122.04133],[37.025017,-122.041579],[37.024938,-122.041566],[37.02481,-122.041297],[37.024573,-122.041313],[37.024196,-122.041511],[37.024029,-122.041684],[37.023814,-122.041641],[37.023435,-122.04184],[37.023093,-122.042046],[37.022884,-122.042329],[37.022787,-122.042504]] },
     { text:"EAGLE CREEK TRAIL", at:[37.029854,-122.0534], rotate:-19.2, path:[[37.030269,-122.052194],[37.030292,-122.051786],[37.030497,-122.051307],[37.03054,-122.050924],[37.030472,-122.05058],[37.030671,-122.050153]] },
-    { text:"BIG ROCK HOLE TRAIL", at:[37.024578,-122.05494], rotate:-77.7, path:[[37.02346,-122.055115],[37.023979,-122.055029],[37.024275,-122.055093],[37.024578,-122.05494],[37.025,-122.054896]] },
     { text:"BUCKEYE TRAIL", at:[37.01809,-122.044463], rotate:-74.6, path:[[37.017479,-122.045181],[37.01753,-122.045099],[37.017566,-122.044628],[37.017776,-122.044657],[37.01809,-122.044463],[37.018456,-122.044422]] },
     { text:"POWDER MILL TRAIL", at:[37.018493,-122.042493], rotate:-7.5, path:[[37.018402,-122.041632],[37.018585,-122.04228],[37.018493,-122.042493],[37.018514,-122.042954]] }
   ],
@@ -427,7 +426,9 @@ const DATA = {
                  fill:"var(--trail-label)" },
 
   // Direction arrows spaced evenly along the route.
-  directionArrows: { count: 14, mileClearance: 34 },
+  // `extra` adds arrows at named fractions along the course, for stretches
+  // the even spacing leaves bare. 0.02 sits just before the Junction post.
+  directionArrows: { count: 14, mileClearance: 34, extra: [0.02] },
 
   // Sheet furniture placement. The map is projected into the area left after
   // `margins`, so shrinking those stretches the course corner to corner and
@@ -598,16 +599,13 @@ const EMOJI_FONT = 'AppleColorEmoji,"Apple Color Emoji","Segoe UI Emoji","Noto C
    so this is drawn. It also survives enlargement to 24x36 better than an
    emoji glyph, which went spindly at poster size. */
 function drawBinoculars(g, x, y, colour){
-  const b = el("g",{transform:`translate(${x},${y}) scale(0.95)`},g);
-  const barrel = {fill:"var(--paper)", stroke:colour, "stroke-width":2.2,
-                  "stroke-linejoin":"round"};
-  el("rect",Object.assign({x:-9.5,y:-11,width:7,height:9,rx:1.6},barrel),b);
-  el("rect",Object.assign({x:2.5, y:-11,width:7,height:9,rx:1.6},barrel),b);
-  el("rect",{x:-2.6,y:-6,width:5.2,height:6,fill:colour},b);
-  el("circle",Object.assign({cx:-6,cy:3.5,r:6.2},barrel),b);
-  el("circle",Object.assign({cx: 6,cy:3.5,r:6.2},barrel),b);
-  el("circle",{cx:-6,cy:3.5,r:2.1,fill:colour},b);
-  el("circle",{cx: 6,cy:3.5,r:2.1,fill:colour},b);
+  // Bootstrap Icons "binoculars-fill", MIT licensed. Unicode has no binoculars
+  // character, and the Noun Project icon is royalty-free-with-licence rather
+  // than open, so this is the one that can ship in a file we hand out.
+  // Source viewBox is 16x16; scale and centre it on the marker point.
+  const k = 1.75;
+  const b = el("g",{transform:`translate(${x-8*k},${y-8*k}) scale(${k})`},g);
+  el("path",{fill:colour,d:"M4.5 1A1.5 1.5 0 0 0 3 2.5V3h4v-.5A1.5 1.5 0 0 0 5.5 1zM7 4v1h2V4h4v.882a.5.5 0 0 0 .276.447l.895.447A1.5 1.5 0 0 1 15 7.118V13H9v-1.5a.5.5 0 0 1 .146-.354l.854-.853V9.5a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v.793l.854.853A.5.5 0 0 1 7 11.5V13H1V7.118a1.5 1.5 0 0 1 .83-1.342l.894-.447A.5.5 0 0 0 3 4.882V4zM1 14v.5A1.5 1.5 0 0 0 2.5 16h3A1.5 1.5 0 0 0 7 14.5V14zm8 0v.5a1.5 1.5 0 0 0 1.5 1.5h3a1.5 1.5 0 0 0 1.5-1.5V14zm4-11H9v-.5A1.5 1.5 0 0 1 10.5 1h1A1.5 1.5 0 0 1 13 2.5z"},b);
   return b;
 }
 
@@ -925,8 +923,12 @@ function drawDirectionArrows(pts){
     cum.push(cum[i-1]+Math.hypot(pts[i][0]-pts[i-1][0], pts[i][1]-pts[i-1][1]));
   const total=cum[cum.length-1];
 
-  for(let k=1;k<=n;k++){
-    let target = total*(k-0.5)/n;
+  const targets = [];
+  for(let k=1;k<=n;k++) targets.push(total*(k-0.5)/n);
+  for(const f of (DATA.directionArrows?.extra || [])) targets.push(total*f);
+
+  for(const t0 of targets){
+    let target = t0;
     // Slide the arrow along the course until it is clear of a mile square,
     // rather than letting the two collide at a fixed spacing.
     for(let tries=0; tries<40; tries++){
@@ -938,6 +940,7 @@ function drawDirectionArrows(pts){
       target += total*0.012;
       if(target > total) target = total*0.999;
     }
+    {
     let i=1; while(i<cum.length-1 && cum[i]<target) i++;
     const [x1,y1]=pts[i-1], [x2,y2]=pts[i];
     const ang = Math.atan2(y2-y1, x2-x1)*180/Math.PI;
@@ -946,6 +949,7 @@ function drawDirectionArrows(pts){
     const a = el("g",{transform:`translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${ang.toFixed(1)})`},g);
     el("polygon",{points:"-6,-6.5 8.5,0 -6,6.5",fill:"#fff",
       stroke:"var(--route)","stroke-width":2.6,"stroke-linejoin":"round"},a);
+    }
   }
 }
 

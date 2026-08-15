@@ -69,7 +69,9 @@ HIGHWAY_TYPES = ["path", "footway", "track", "bridleway", "cycleway"]
 # Unofficial / rider-invented names OSM carries inside the park. They are real
 # OSM data but they are not what a volunteer will hear on the radio or read on
 # a park signpost, so they are dropped by default rather than labelled.
-DEFAULT_EXCLUDE = ["Your Sister", "Bottom of the Low Road"]
+DEFAULT_EXCLUDE = ["Your Sister", "Bottom of the Low Road",
+                   # crowds the spot Ridge Fire Road needs
+                   "Big Rock Hole Trail"]
 
 # The trails the 10K actually runs on. Their names are the ones a volunteer
 # says on the radio, so they get the prominent label style and everything else
