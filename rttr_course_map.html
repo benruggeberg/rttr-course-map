@@ -277,7 +277,6 @@ const DATA = {
   trails: [
     { name:"Redwood Grove Loop Trail", path:[[37.03914,-122.063148],[37.039043,-122.062969],[37.03865,-122.062646],[37.038374,-122.062731],[37.038314,-122.062861],[37.037778,-122.062978],[37.037676,-122.062939],[37.037398,-122.062097],[37.037436,-122.061699],[37.03734,-122.06134],[37.037072,-122.061152],[37.03673,-122.06073],[37.036241,-122.060481],[37.036073,-122.060256],[37.036046,-122.06003],[37.03566,-122.059394],[37.035873,-122.059305],[37.035962,-122.059358],[37.036101,-122.059271],[37.036304,-122.059484],[37.036417,-122.059516],[37.036543,-122.059497],[37.036674,-122.059373],[37.037136,-122.059473],[37.037559,-122.059707],[37.037733,-122.059994],[37.038025,-122.059981],[37.038091,-122.06007],[37.038083,-122.060615],[37.038147,-122.060835],[37.03886,-122.061558],[37.039092,-122.062014],[37.039189,-122.062488],[37.03914,-122.063148]] },
     { name:"Rincon Fire Road", path:[[37.029846,-122.052273],[37.029578,-122.05214],[37.029427,-122.052162],[37.029196,-122.052442],[37.028648,-122.052678],[37.028305,-122.053142],[37.028211,-122.053748],[37.027919,-122.054389],[37.027549,-122.054762],[37.027622,-122.05528],[37.02802,-122.056021],[37.028002,-122.056207],[37.027808,-122.056296],[37.027502,-122.056081],[37.027176,-122.05608],[37.027003,-122.055942],[37.026802,-122.055634],[37.026628,-122.055615],[37.026457,-122.055362],[37.026188,-122.05528],[37.025805,-122.055402],[37.025004,-122.055244],[37.024439,-122.05548],[37.024418,-122.055547],[37.023995,-122.055546]] },
-    { name:"Pipeline Road", path:[[37.039332,-122.063827],[37.038907,-122.064023],[37.038595,-122.063916],[37.038163,-122.0639],[37.037276,-122.063251],[37.036812,-122.062175],[37.036604,-122.061968],[37.036147,-122.061714],[37.035801,-122.061121],[37.035219,-122.059676],[37.034934,-122.05852],[37.034826,-122.058417],[37.034099,-122.058138]] },
     { name:"Ridge Fire Road", path:[[37.02464,-122.053093],[37.024687,-122.052702],[37.024509,-122.05246],[37.024126,-122.052241],[37.024231,-122.051781],[37.024125,-122.050975],[37.024243,-122.050699],[37.024396,-122.050626],[37.024475,-122.050501],[37.024692,-122.050447],[37.025001,-122.04996],[37.025201,-122.049896],[37.025506,-122.04958],[37.026,-122.048408],[37.026302,-122.04804],[37.026407,-122.047817],[37.026443,-122.047221],[37.026081,-122.045919]] },
     { name:"Pine Trail", path:[[37.025668,-122.041318],[37.025453,-122.04133],[37.025017,-122.041579],[37.024938,-122.041566],[37.02481,-122.041297],[37.024573,-122.041313],[37.024196,-122.041511],[37.024029,-122.041684],[37.023814,-122.041641],[37.023435,-122.04184],[37.023093,-122.042046],[37.022884,-122.042329],[37.022787,-122.042504],[37.022822,-122.04283],[37.02271,-122.043126],[37.023162,-122.044028],[37.023221,-122.044314],[37.023515,-122.0448]] },
     { name:"Eagle Creek Trail", path:[[37.03039,-122.055902],[37.03014,-122.055739],[37.029871,-122.055442],[37.029776,-122.055185],[37.029912,-122.054778],[37.02974,-122.054451],[37.029751,-122.053909],[37.029896,-122.053663],[37.029854,-122.0534],[37.030042,-122.053137],[37.030048,-122.05281],[37.030269,-122.052194],[37.030292,-122.051786],[37.030497,-122.051307],[37.03054,-122.050924],[37.030472,-122.05058],[37.030671,-122.050153]] },
@@ -287,9 +286,7 @@ const DATA = {
     { name:"Big Rock Hole Trail", path:[[37.02346,-122.055115],[37.023979,-122.055029],[37.024275,-122.055093],[37.024578,-122.05494],[37.025,-122.054896],[37.025948,-122.05533]] },
     { name:"Buckeye Trail", path:[[37.017479,-122.045181],[37.01753,-122.045099],[37.017566,-122.044628],[37.017776,-122.044657],[37.01809,-122.044463],[37.018456,-122.044422],[37.018686,-122.04422],[37.018785,-122.044059],[37.018764,-122.044002]] },
     { name:"Powder Mill Trail", path:[[37.018402,-122.041632],[37.018585,-122.04228],[37.018493,-122.042493],[37.018514,-122.042954],[37.018764,-122.043627]] },
-    { name:"Pipeline Road", path:[[37.018558,-122.043856],[37.017835,-122.043225],[37.017191,-122.043021]] },
     { name:null, path:[[37.035026,-122.058804],[37.035353,-122.058575],[37.035615,-122.058626],[37.035815,-122.058753],[37.036101,-122.059271]] },
-    { name:"River Trail", path:[[37.03986,-122.066319],[37.040004,-122.065568],[37.039944,-122.064934],[37.039993,-122.064845]] },
     { name:null, path:[[37.040522,-122.064027],[37.039461,-122.063374]] },
     { name:null, path:[[37.027919,-122.054389],[37.028262,-122.054784],[37.028301,-122.055008],[37.028389,-122.054989],[37.028506,-122.055104]] }
   ],
@@ -312,10 +309,13 @@ const DATA = {
   //   offset     [dx,dy] nudge in sheet units after placement
   trailNameOverrides: {
     "REDWOOD GROVE LOOP TRAIL": { placement:"centroid", wrap:12 },
-    "RIVER TRAIL":              { dy:14 },
-    "PIPELINE ROAD":            { dy:-14 },
-    "RIDGE FIRE ROAD":          { dy:-13 },
-    "POWDER MILL FIRE ROAD":    { dy:-25, startOffset:18 },
+    "RIVER TRAIL":              { dy:21 },
+    "PIPELINE ROAD":            { dy:-18 },
+    // Left single-line on purpose. Two lines along a curving path each follow
+    // a different radius, so they splay apart and collide; the split feature
+    // still exists and works where a trail runs straight.
+    "RIDGE FIRE ROAD":          { dy:-17 },
+    "POWDER MILL FIRE ROAD":    { dy:-25, startOffset:20 },
     "PINE TRAIL":               { dy:-7,  startOffset:64 },
     "POWDER MILL TRAIL":        { dy:-6,  startOffset:70 }
   },
@@ -366,8 +366,8 @@ const DATA = {
   // Two volunteers are posted at each, plus extras at start/finish.
   // Verify any coordinate change with: python3 scripts/check_markers.py
   markers: [
-    { type:"water", at:[37.033704,-122.057780], num:1, label:"Water 1" },
-    { type:"water", at:[37.024687,-122.053276], num:2, label:"Water 2" },
+    { type:"water", at:[37.033704,-122.057780], num:1, label:"Water 1", offset:[0,0] },
+    { type:"water", at:[37.024687,-122.053276], num:2, label:"Water 2", offset:[0,0] },
 
     // UNVERIFIED -- 56 m off route. OSM puts the River Trail x Eagle Creek
     // junction at 37.030297,-122.055916 (21 m off route, mile 1.12).
@@ -376,9 +376,9 @@ const DATA = {
     // UNVERIFIED -- 81 m off route. OSM has no "Redwood Grove Trail" nearby,
     // so this one cannot be cross-checked against the trail network.
     { type:"volunteer", at:[37.035856,-122.057746], num:2, label:"Indian",
-      note:"Redwood Grove Trail to Indian Creek", nudge:[-26,10], offset:[-4,0] },
+      note:"Redwood Grove Trail to Indian Creek", nudge:[-26,10], offset:[9,0] },
     { type:"volunteer", at:[37.039297,-122.063832], num:3, label:"Junction",
-      note:"River Trail at Pipeline", side:"left", offset:[-6,-4] },
+      note:"River Trail at Pipeline", side:"above", offset:[0,-2] },
     // UNVERIFIED -- 664 m off route, and renders well outside the course.
     // OSM shows Rincon Fire Rd and Ridge Fire Rd meeting at a shared node at
     // 37.025934,-122.055312: 5 m off route, mile 1.54. Kept as recorded
@@ -402,7 +402,7 @@ const DATA = {
     { type:"viewpoint", at:[37.026165,-122.046037], label:"Observation Deck",
       snapToRoute:true, offset:[14,-16] },
     { type:"viewpoint", at:[37.023122,-122.051854], label:"Overlook Bench",
-      offset:[-16,44] },
+      side:"below", offset:[0,20] },
 
     // Musician and Bigfoot positions are still to come -- no coordinates yet.
     // { type:"music",   at:[37.0000,-122.0000], label:"Fiddle duo" },
@@ -871,7 +871,7 @@ function drawTermini(pts){
     // Roaring Camp start and finish are ~105 m apart. Push the labels to
     // opposite sides so they don't collide at this scale.
     checkerFlag(g, sx, sy, "START",  gap < 90 ? "above" : "auto");
-    checkerFlag(g, ex, ey, "FINISH", gap < 90 ? "below" : "auto");
+    checkerFlag(g, ex, ey, "FINISH", gap < 90 ? "right" : "auto");
   }
 }
 
@@ -883,9 +883,9 @@ function checkerFlag(g,x,y,label,side){
   for(let r=0;r<3;r++) for(let c=0;c<3;c++){
     if((r+c)%2===0) el("rect",{x:x-s*1.5+c*s,y:y-s*1.5+r*s,width:s,height:s,fill:"var(--route)"},g);
   }
-  const below = side==="below";
-  const node = txt(g, x, below ? y+s*3.4 : y-s*2.4, label,{
-    "text-anchor":"middle","font-size":15,"font-weight":700,
+  const below = side==="below", right = side==="right";
+  const node = txt(g, right ? x+s*2.4 : x, right ? y+s*0.9 : (below ? y+s*3.4 : y-s*2.4), label,{
+    "text-anchor": right ? "start" : "middle","font-size":15,"font-weight":700,
     "font-family":"Barlow Semi Condensed, Arial, sans-serif",
     "letter-spacing":"0.06em",fill:"var(--route)",class:"halo"});
   LABELS.push({ node, manual:false, droppable:false, routeCost: COST_ROUTE });
@@ -988,30 +988,41 @@ function drawTrailNames(){
       el("path",{id, fill:"none", stroke:"none",
         d: ordered.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ")}, defs);
 
-      const node = el("text",{
-        "font-size":st.size,"font-weight":st.weight,"letter-spacing":st.track,
-        "font-family":"Barlow Semi Condensed, Arial, sans-serif",
-        fill:st.fill, class:"halo", "text-anchor":"middle"},g);
       // A course trail's line is 11.5 units of casing plus a 6-unit stroke, so
       // its name has to clear roughly half of that or it sits in the black.
-      const lift = t.dy != null ? t.dy : (t.onCourse ? -13 : -5);
-      const tp = el("textPath",{"startOffset": (t.startOffset || 50) + "%",
-        dy: lift}, node);
-      tp.setAttributeNS("http://www.w3.org/1999/xlink","href","#"+id);
-      tp.setAttribute("href","#"+id);
-      tp.textContent = t.text;
+      const lift  = t.dy != null ? t.dy : (t.onCourse ? -13 : -5);
+      // split sets a long name on two lines that each follow the trail, with
+      // splitDy choosing which side of the line each half sits on. Each line
+      // needs its own <text>: several <textPath> inside one <text> do not
+      // anchor independently, they run on from one another and concatenate.
+      const parts = t.split || [t.text];
+      const lifts = t.splitDy || [lift];
+      const pathLen = document.getElementById(id).getTotalLength();
+      const holder = el("g",{},g);
+      let fits = true;
+
+      parts.forEach((part,pi)=>{
+        const line = el("text",{
+          "font-size":st.size,"font-weight":st.weight,"letter-spacing":st.track,
+          "font-family":"Barlow Semi Condensed, Arial, sans-serif",
+          fill:st.fill, class:"halo", "text-anchor":"middle"}, holder);
+        const tp = el("textPath",{"startOffset": (t.startOffset || 50) + "%",
+          dy: (lifts[pi] != null ? lifts[pi] : lift)}, line);
+        tp.setAttributeNS("http://www.w3.org/1999/xlink","href","#"+id);
+        tp.setAttribute("href","#"+id);
+        tp.textContent = part;
+        try { if(line.getComputedTextLength() > pathLen*0.92) fits = false; }
+        catch(e){ /* measurement unavailable; keep the path version */ }
+      });
 
       // textPath silently clips a name longer than the path it runs on, which
       // is how "RIDGE FIRE ROAD" became "DGE FIRE ROAD". If it does not fit,
       // abandon the path and set the name straight instead.
-      const pathLen = document.getElementById(id).getTotalLength();
-      let textLen = 0;
-      try { textLen = node.getComputedTextLength(); } catch(e){ textLen = 0; }
-      if(textLen > 0 && textLen > pathLen*0.92){
-        node.remove();
+      if(!fits){
+        holder.remove();
       } else {
-        if(t.offset) shiftNode(node, t.offset[0], t.offset[1]);
-        LABELS.push({ node, manual:true, droppable:false,
+        if(t.offset) shiftNode(holder, t.offset[0], t.offset[1]);
+        LABELS.push({ node:holder, manual:true, droppable:false,
                     routeCost: t.onCourse ? 0 : COST_ROUTE_OFFCOURSE });
         continue;
       }
@@ -1118,13 +1129,18 @@ function drawMarkers(){
       block = el("g",{class:"marker-label"},unit);
       // side:"left" sets the text to the other side of the symbol, anchored at
       // its right edge, so it reads away from the trail rather than across it.
+      const stacked = m.side === "above" || m.side === "below";
       const left = m.side === "left";
-      const lx = left ? x-19 : x+19;
-      const anchor = left ? "end" : "start";
+      const lx = stacked ? x : (left ? x-19 : x+19);
+      const anchor = stacked ? "middle" : (left ? "end" : "start");
       const lines = wrapText(m.label, DATA.markerPlacement?.wrap || 22);
       // First line sits on the symbol's own centre line, so a label and its
       // marker read as one row rather than the text floating above it.
-      const top = y + 5 - (lines.length-1)*15/2 - (m.note ? 5 : 0);
+      const noteLines = m.note ? wrapText(m.note, DATA.markerPlacement?.wrapNote || 26).length : 0;
+      let top = y + 5 - (lines.length-1)*15/2 - (m.note ? 5 : 0);
+      // Stacked labels clear the symbol entirely rather than straddling it.
+      if(m.side === "above") top = y - 22 - (lines.length-1)*15 - noteLines*13;
+      if(m.side === "below") top = y + 26;
       lines.forEach((ln,i)=>txt(block,lx,top+i*15,ln,{
         "text-anchor":anchor,
         "font-size":14,"font-weight":600,"font-family":"Barlow Semi Condensed, Arial, sans-serif",

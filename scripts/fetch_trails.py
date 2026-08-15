@@ -379,7 +379,16 @@ def main():
 
     # Geometry for the course's own trails is dropped -- the route line is
     # already there -- but their names survive into the label pass.
-    geom = [t for t in kept if not t["on_course"]]
+    #
+    # Stray non-coincident fragments of a course trail go too. The route
+    # already shows where River Trail runs, so a disconnected dashed stub of it
+    # off to one side reads as a separate trail and is simply noise. Trails
+    # named on --full-extent are exempt: Ridge Fire Road's unraced stretch is
+    # shown precisely so a runner can see it is the wrong way.
+    geom = [t for t in kept
+            if not t["on_course"]
+            and not (t["name"] and t["name"].lower() in course_names
+                     and t["name"].lower() not in full_extent)]
     print(f"  {len(geom)} segments drawn ({len([t for t in geom if t['name']])} named), "
           f"{sum(len(t['path']) for t in geom)} points total")
     print(f"  course trails detected: {sorted(detected) or 'none'}")
