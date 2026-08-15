@@ -58,6 +58,14 @@ two sources do not agree everywhere:
 - **Radio channel and course-lead phone** — deliberately blank rules on the
   printed sheet, to be filled in by hand on race morning.
 
+## Data sources added later
+
+- **Water** — USGS National Hydrography Dataset (NHDPlus HR), via
+  `scripts/fetch_water.py`. San Lorenzo River plus Eagle, Powder Mill and
+  Gold Gulch creeks. Strahler stream order drives line weight.
+- **Terrain** — USGS 10 m NED sampled on a 45 m grid and traced to 20 m
+  contours by `scripts/fetch_terrain.py`.
+
 ## Known cosmetic issues
 
 - Mile marker 4 sits close to the brief panel rule on the volunteer sheet.

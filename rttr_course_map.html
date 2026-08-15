@@ -26,7 +26,7 @@
   --accent:#0f5c2e;
   --hair:#d8d8d8;
   --trail-label:#8f8f8f;
-  --decor-tree:#3f5a44;
+  --river:#7fa9bd;
   --contour:#d9d2c4;
   --contour-index:#c3b9a5;
 }
@@ -98,7 +98,7 @@ body{
 
 /* ---------- LAYER VISIBILITY ---------- */
 /* Each layer group hides when its class is present on the svg root. */
-.off-decor     .layer-decor,
+.off-river     .layer-river,
 .off-terrain   .layer-terrain,
 .off-trails    .layer-trails,
 .off-route     .layer-route,
@@ -125,7 +125,7 @@ body{
    photocopied handout, which is the one output this theme exists for. */
 /* Background trail names go darker here than on screen: a mid grey that reads
    fine on a monitor drops out entirely once the sheet has been photocopied. */
-.theme-mono {--route:#000000;--trail:#b0b0b0;--water:#000;--vol:#000;--music:#000;--bigfoot:#000;--accent:#000;--trail-label:#6e6e6e}
+.theme-mono {--route:#000000;--trail:#b0b0b0;--water:#000;--vol:#000;--music:#000;--bigfoot:#000;--accent:#000;--trail-label:#6e6e6e;--river:#9a9a9a}
 .theme-mono .marker-fill{fill:#fff}
 /* Poster palette: pale sage paper, deep understory green, redwood-bark accent.
    Grounded in the park itself rather than a generic warm-cream treatment. */
@@ -134,7 +134,7 @@ body{
   --route:#16341f; --route-casing:#eef1ea;
   --trail:#a8b5a2; --hair:#c3cdbd; --trail-label:#7d8a79;
   --accent:#6b2f1a;
-  --water:#1f5f7a; --vol:#16341f; --music:#4a3a6b; --bigfoot:#4a3a2a;
+  --water:#1f5f7a; --vol:#16341f; --music:#4a3a6b; --bigfoot:#4a3a2a; --river:#7d9fae;
 }
 .theme-forest #sheet{background:#eef1ea}
 
@@ -147,8 +147,8 @@ body{
   --route:#1f3d2b; --route-casing:#f2e9d8;
   --trail:#c2b299; --hair:#cbbda3; --trail-label:#8a7a5f;
   --accent:#a8481f;
-  --contour:#e0d3ba; --contour-index:#cdbb9a; --decor-tree:#40573f;
-  --water:#2f6b7a; --vol:#1f3d2b; --music:#6b4a2c; --bigfoot:#4a3a2a;
+  --contour:#e0d3ba; --contour-index:#cdbb9a;
+  --water:#2f6b7a; --vol:#1f3d2b; --music:#6b4a2c; --bigfoot:#4a3a2a; --river:#8aa8ad;
 }
 .theme-vintage #sheet{background:#f2e9d8}
 .theme-vintage .map-title{letter-spacing:.02em}
@@ -162,8 +162,8 @@ body{
   --route:#b3241c; --route-casing:#fbfaf7;
   --trail:#a9a297; --hair:#d4cec3; --trail-label:#8b8378;
   --accent:#b3241c;
-  --contour:#cbb193; --contour-index:#a9855c; --decor-tree:#6b6156;
-  --water:#1f6f8b; --vol:#23201c; --music:#5a4a7a; --bigfoot:#5c4033;
+  --contour:#cbb193; --contour-index:#a9855c;
+  --water:#1f6f8b; --vol:#23201c; --music:#5a4a7a; --bigfoot:#5c4033; --river:#8fb3c4;
 }
 .theme-survey #sheet{background:#fbfaf7}
 
@@ -176,8 +176,8 @@ body{
   --route:#7a3a12; --route-casing:#efe2c4;
   --trail:#c3ad86; --hair:#cbb389; --trail-label:#8c7448;
   --accent:#7a3a12;
-  --contour:#ddcaa4; --contour-index:#c9b183; --decor-tree:#4a5a34;
-  --water:#3a6b78; --vol:#42301c; --music:#6b4a2c; --bigfoot:#4a3a2a;
+  --contour:#ddcaa4; --contour-index:#c9b183;
+  --water:#3a6b78; --vol:#42301c; --music:#6b4a2c; --bigfoot:#4a3a2a; --river:#9ab0ab;
 }
 .theme-storybook #sheet{background:#efe2c4}
 
@@ -220,7 +220,7 @@ body{
     <label><input type="checkbox" data-layer="route" checked> Race route</label>
     <label><input type="checkbox" data-layer="terminus" checked> Start / finish</label>
     <label><input type="checkbox" data-layer="arrows" checked> Direction arrows</label>
-    <label><input type="checkbox" data-layer="decor"> Illustrated ornament</label>
+    <label><input type="checkbox" data-layer="river" checked> River &amp; creeks</label>
     <label><input type="checkbox" data-layer="terrain"> Terrain contours</label>
     <label><input type="checkbox" data-layer="trails" checked> Other park trails</label>
     <label><input type="checkbox" data-layer="trailname" checked> Trail names</label>
@@ -313,7 +313,7 @@ const DATA = {
     // Trails come from the California State Parks trail layer (unit 418), the
     // same data behind the official park map viewer. Viewpoints and the ODbL
     // credit for the route's own base data come from OpenStreetMap.
-    credit:   "Trail data © California State Parks · Route and viewpoints © OpenStreetMap contributors"
+    credit:   "Trails © California State Parks · Water & terrain © USGS · Route © OpenStreetMap contributors"
   },
 
   // Paste your GPX track here to make the file self-contained.
@@ -342,6 +342,21 @@ const DATA = {
     { ele:220, index:false, paths:[[[37.025522,-122.061698],[37.025304,-122.061332],[37.025118,-122.06125]],[[37.025926,-122.062103],[37.025629,-122.061838],[37.025522,-122.061698]],[[37.026331,-122.063296],[37.026093,-122.062345],[37.025926,-122.062103]],[[37.026735,-122.064217],[37.026629,-122.063864],[37.026331,-122.063296]],[[37.027139,-122.065975],[37.027123,-122.065889],[37.027172,-122.065383],[37.027139,-122.065208],[37.026735,-122.064217]],[[37.037143,-122.050699],[37.037245,-122.050888],[37.037595,-122.051205],[37.037649,-122.051223],[37.038458,-122.051082],[37.038625,-122.051205],[37.038862,-122.051499],[37.039266,-122.051735],[37.03967,-122.051676],[37.040075,-122.05173],[37.040479,-122.051905],[37.040883,-122.052194],[37.04068,-122.052724],[37.04061,-122.05323],[37.040673,-122.054243],[37.040479,-122.054556],[37.040317,-122.054749],[37.040297,-122.055256],[37.040479,-122.055405],[37.040816,-122.055762],[37.040883,-122.055795],[37.041692,-122.055855],[37.042096,-122.055837],[37.0425,-122.055959]],[[37.041692,-122.051939],[37.041444,-122.051711],[37.041702,-122.051205],[37.04175,-122.050192],[37.042096,-122.04958],[37.0425,-122.049428]],[[37.042096,-122.053747],[37.04202,-122.05323],[37.041993,-122.052724],[37.041848,-122.052218],[37.041692,-122.051939]]] },
     { ele:240, index:false, paths:[[[37.024714,-122.062978],[37.024677,-122.062851],[37.024309,-122.062344]],[[37.025118,-122.063699],[37.024838,-122.063357],[37.024714,-122.062978]],[[37.025127,-122.066395],[37.025522,-122.066257],[37.025926,-122.065998],[37.026015,-122.065889],[37.026047,-122.065383],[37.025952,-122.064876],[37.025742,-122.06437],[37.025522,-122.064047],[37.025118,-122.063699]]] },
     { ele:260, index:false, paths:[[[37.022598,-122.066395],[37.022692,-122.066167],[37.023097,-122.065748],[37.023501,-122.065504],[37.023987,-122.065383],[37.023905,-122.065365],[37.023146,-122.06437],[37.023087,-122.063864],[37.022864,-122.063357],[37.022692,-122.06334],[37.022288,-122.063383]]] }
+  ],
+
+  // Streams and rivers, from the USGS National Hydrography Dataset.
+  // `order` is Strahler stream order and drives line weight, so the
+  // San Lorenzo reads as a river and Eagle Creek reads as a creek.
+  water: [
+    { name:"San Lorenzo River", order:6, path:[[37.030474,-122.056379],[37.030155,-122.056872],[37.029864,-122.057654],[37.029232,-122.0579],[37.028622,-122.057935],[37.02687,-122.057811],[37.02493,-122.057209],[37.024721,-122.057209],[37.024485,-122.057455],[37.02426,-122.058024],[37.024012,-122.058086],[37.023771,-122.057935],[37.023254,-122.057298],[37.022864,-122.057175],[37.022562,-122.05725],[37.022348,-122.057497],[37.022249,-122.057922],[37.022688,-122.059621],[37.022628,-122.060005],[37.022425,-122.060162],[37.021117,-122.060121],[37.019166,-122.060718],[37.018716,-122.060766],[37.017534,-122.060471],[37.016174,-122.059702],[37.015129,-122.058949],[37.01482,-122.058404],[37.014469,-122.057426],[37.014466,-122.056981],[37.014606,-122.05662],[37.014738,-122.056471],[37.015318,-122.056263],[37.015493,-122.056108],[37.015611,-122.055885],[37.015651,-122.055394],[37.015589,-122.055042],[37.015279,-122.054282],[37.014269,-122.052709],[37.01408,-122.052275],[37.01389,-122.051324],[37.013892,-122.050831],[37.013995,-122.050547],[37.01424,-122.05029],[37.014625,-122.050312],[37.015423,-122.050805],[37.016852,-122.052033],[37.017302,-122.052513],[37.018285,-122.052889],[37.01901,-122.053061],[37.019675,-122.053046],[37.020256,-122.052861],[37.02059,-122.052608],[37.020826,-122.052272],[37.020949,-122.05185],[37.020931,-122.051356],[37.020818,-122.050883],[37.02029,-122.049982],[37.019586,-122.049155],[37.019205,-122.04884],[37.017391,-122.047586],[37.015531,-122.046691],[37.013524,-122.045469],[37.013204,-122.04478],[37.012906,-122.043259],[37.012703,-122.042838],[37.012436,-122.042542],[37.012266,-122.042478],[37.01188,-122.04253],[37.011604,-122.043026],[37.011337,-122.043205],[37.010861,-122.043978],[37.009582,-122.044811],[37.008898,-122.045078],[37.008571,-122.04487],[37.008211,-122.044285],[37.008162,-122.04344],[37.008206,-122.042945]] },
+    { name:"San Lorenzo River", order:6, path:[[37.039508,-122.068215],[37.039348,-122.066974],[37.039376,-122.066296],[37.039705,-122.065377],[37.039727,-122.065124],[37.039612,-122.064589],[37.038837,-122.064397],[37.037953,-122.06437],[37.037469,-122.064109],[37.035947,-122.061896],[37.035496,-122.061107],[37.03509,-122.059874],[37.034689,-122.059154]] },
+    { name:"San Lorenzo River", order:6, path:[[37.034689,-122.059154],[37.03359,-122.057968],[37.032205,-122.056858],[37.030892,-122.056338],[37.030474,-122.056379]] },
+    { name:null, order:2, path:[[37.0239,-122.066675],[37.025536,-122.066764],[37.026339,-122.067032],[37.027725,-122.067196],[37.029314,-122.067092],[37.030265,-122.066675],[37.030657,-122.066186],[37.031019,-122.065516],[37.031924,-122.063089],[37.032909,-122.061192],[37.034689,-122.059154]] },
+    { name:"Powder Mill Creek", order:1, path:[[37.030906,-122.041883],[37.030483,-122.041877],[37.029604,-122.041589],[37.027911,-122.040644],[37.026268,-122.039904],[37.024521,-122.039528],[37.022444,-122.038754],[37.021026,-122.038371],[37.019097,-122.037659],[37.016899,-122.036618],[37.016009,-122.036365],[37.015163,-122.036722],[37.014789,-122.037119],[37.0143,-122.037771],[37.013922,-122.038655],[37.012751,-122.040354],[37.011197,-122.042068],[37.010724,-122.042472],[37.01029,-122.043144],[37.009395,-122.043651],[37.009021,-122.043548],[37.008933,-122.043171],[37.008741,-122.042945],[37.008301,-122.042959]] },
+    { name:"Eagle Creek", order:1, path:[[37.033428,-122.038134],[37.034203,-122.040053],[37.034357,-122.040752],[37.034604,-122.041382],[37.034758,-122.042849],[37.034572,-122.044473],[37.034819,-122.047804],[37.034638,-122.04816],[37.034237,-122.048661],[37.033528,-122.049079],[37.032561,-122.049388],[37.032177,-122.049429],[37.031248,-122.049244],[37.030924,-122.049272],[37.030633,-122.049395],[37.030254,-122.049861],[37.029996,-122.050923],[37.029869,-122.052897],[37.029578,-122.053775],[37.029573,-122.054049],[37.029738,-122.055371],[37.030474,-122.056379]] },
+    { name:null, order:1, path:[[37.039242,-122.054861],[37.037851,-122.056307],[37.036607,-122.057865],[37.034689,-122.059154]] },
+    { name:null, order:1, path:[[37.020046,-122.071196],[37.021426,-122.070006],[37.022139,-122.069174],[37.022615,-122.068174],[37.0239,-122.066675]] },
+    { name:null, order:1, path:[[37.020034,-122.069382],[37.020837,-122.068252],[37.022378,-122.067026],[37.023186,-122.066675],[37.0239,-122.066675]] }
   ],
 
   // Optional: other park trails for context. Same [lat,lon] format.
@@ -508,25 +523,6 @@ const DATA = {
   // `extra` adds arrows at named fractions along the course, for stretches
   // the even spacing leaves bare. 0.02 sits just before the Junction post.
   directionArrows: { count: 14, mileClearance: 34, extra: [0.02] },
-
-  // Illustrated ornament for the poster. Positions are in viewBox units and
-  // were chosen from a scan for regions with no route, trail or panel in them
-  // -- ornament must never be the reason a runner misreads the course.
-  decor: {
-    frame: true,
-    grain: true,
-    rose: true,
-    grove: [
-      { x: 88,  base: 1010, h: 300 },
-      { x: 148, base: 1030, h: 218 },
-      { x: 118, base: 1052, h: 258 },
-      { x: 186, base: 1046, h: 168 },
-      { x: 60,  base: 1044, h: 196 }
-    ],
-    // Bigfoot heads off into the trees. The race is named for him; the map
-    // may as well admit he is out there.
-    tracks: { x: 214, y: 1120, n: 7, dx: 26, dy: -21, size: 9 }
-  },
 
   // Sheet furniture placement. The map is projected into the area left after
   // `margins`, so shrinking those stretches the course corner to corner and
@@ -900,8 +896,8 @@ function render(){
     return;
   }
 
-  drawDecor();
   drawContours();
+  drawWater();
   drawOtherTrails();
   const proj = drawRoute();
   drawDirectionArrows(proj);
@@ -935,66 +931,18 @@ function render(){
 /* Terrain, drawn first so everything else sits on top of it. Index contours
    carry a little more weight, which is what lets a reader pick out the shape
    of the ridge at a glance rather than counting lines. */
-/* A stylised coast redwood: a straight bole and stacked boughs that taper to
-   a spire. Drawn as flat silhouette so it stays a poster ornament rather than
-   pretending to be a map symbol. */
-function redwood(g, x, base, h, fill){
-  const tw = h*0.045;
-  el("rect",{x:x-tw/2, y:base-h*0.20, width:tw, height:h*0.20, fill},g);
-  const tiers = 6;
-  for(let i=0;i<tiers;i++){
-    const f = i/(tiers-1);                    // 0 = spire, 1 = lowest bough
-    const yTop = base - h*0.17 - (1-f)*h*0.80;
-    const yBot = yTop + h*0.24;
-    const hw   = h*0.20*(f*0.8 + 0.22);
-    el("path",{d:`M${x.toFixed(1)},${yTop.toFixed(1)} `+
-                 `L${(x+hw).toFixed(1)},${yBot.toFixed(1)} `+
-                 `L${(x-hw).toFixed(1)},${yBot.toFixed(1)} Z`, fill},g);
-  }
-}
-
-function bigfootTrack(g, x, y, r, rot, fill){
-  const t = el("g",{transform:`translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${rot})`},g);
-  el("ellipse",{cx:0, cy:0, rx:r*0.62, ry:r, fill},t);
-  for(let i=0;i<5;i++){
-    const a = -0.9 + i*0.45;
-    el("circle",{cx:Math.sin(a)*r*0.62, cy:-r*1.25 + Math.abs(Math.cos(a))*r*0.12,
-      r:r*(0.26 - i*0.022), fill},t);
-  }
-}
-
-function drawDecor(){
-  const d = DATA.decor; if(!d) return;
-  const g = group(map,"layer-decor");
-  const defs = map.querySelector("defs");
-
-  // Paper grain. feTurbulence is generated by the renderer, so the sheet stays
-  // a single file with no image asset attached to it.
-  if(d.grain){
-    const f = el("filter",{id:"grain", x:"0", y:"0", width:"100%", height:"100%"},defs);
-    el("feTurbulence",{type:"fractalNoise", baseFrequency:"0.9",
-      numOctaves:"4", stitchTiles:"stitch"},f);
-    el("feColorMatrix",{type:"saturate", values:"0"},f);
-    el("rect",{x:0,y:0,width:VB.w,height:VB.h, filter:"url(#grain)",
-      opacity:0.05, "pointer-events":"none"},g);
-  }
-
-  if(d.frame){
-    const m = 26;
-    el("rect",{x:m, y:m, width:VB.w-m*2, height:VB.h-m*2, fill:"none",
-      stroke:"var(--ink)", "stroke-width":3},g);
-    el("rect",{x:m+7, y:m+7, width:VB.w-(m+7)*2, height:VB.h-(m+7)*2, fill:"none",
-      stroke:"var(--ink)", "stroke-width":1},g);
-  }
-
-  for(const t of (d.grove||[])) redwood(g, t.x, t.base, t.h, "var(--decor-tree)");
-
-  if(d.tracks){
-    const k = d.tracks;
-    for(let i=0;i<k.n;i++){
-      bigfootTrack(g, k.x + i*k.dx + (i%2?k.size*1.1:0), k.y + i*k.dy,
-        k.size, -38 + (i%2?7:-7), "var(--decor-tree)");
-    }
+/* Streams under everything else. Strahler order drives the weight, so the
+   San Lorenzo reads as a river without anyone hand-tuning widths. */
+function drawWater(){
+  const g = group(map,"layer-river");
+  for(const w of (DATA.water||[])){
+    if(!w.path || w.path.length<2) continue;
+    const d = w.path.map(([la,lo],i)=>{
+      const [x,y]=PROJ.toXY(la,lo); return (i?"L":"M")+x.toFixed(1)+","+y.toFixed(1);
+    }).join(" ");
+    el("path",{d,fill:"none",stroke:"var(--river)",
+      "stroke-width": w.order>=6 ? 4.2 : (w.order>=3 ? 2.4 : 1.5),
+      "stroke-linejoin":"round","stroke-linecap":"round"},g);
   }
 }
 
@@ -1455,7 +1403,8 @@ function mapFloor(){
    course leaves empty. Everything is derived from here, so moving the legend
    moves the whole stack together. */
 function legendBox(){
-  const w = 250, n = 9;
+  const w = 250;
+  const n = LEGEND_ROWS;
   return {
     x: VB.w - DATA.layout.margins.right - w,
     y: VB.h*0.052 + VB.w*0.036 + 24,
@@ -1469,22 +1418,6 @@ function drawCompass(){
   const b = legendBox();
   const r=20, x=b.x+r+4, y=b.y+b.h+46;
 
-  // With ornament on, the plain arrow gives way to an eight-point rose.
-  if(DATA.decor?.rose && !map.classList.contains("off-decor")){
-    const R = r*1.5;
-    for(let i=0;i<8;i++){
-      const a = i*Math.PI/4, w = (i%2 ? R*0.16 : R*0.24), len = (i%2 ? R*0.62 : R);
-      const px = x+Math.cos(a)*len, py = y+Math.sin(a)*len;
-      const qx = x+Math.cos(a+Math.PI/2)*w, qy = y+Math.sin(a+Math.PI/2)*w;
-      const sx = x+Math.cos(a-Math.PI/2)*w, sy = y+Math.sin(a-Math.PI/2)*w;
-      el("polygon",{points:`${px.toFixed(1)},${py.toFixed(1)} ${qx.toFixed(1)},${qy.toFixed(1)} ${sx.toFixed(1)},${sy.toFixed(1)}`,
-        fill: i%2 ? "var(--decor-tree)" : "var(--ink)"},g);
-    }
-    el("circle",{cx:x,cy:y,r:R*0.20,fill:"var(--paper)",stroke:"var(--ink)","stroke-width":1.6},g);
-    txt(g,x,y+R+14,"N",{"text-anchor":"middle","font-size":14,"font-weight":700,
-      "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"var(--ink)"});
-    return;
-  }
   el("circle",{cx:x,cy:y,r:r,fill:"var(--paper)",stroke:"var(--ink)","stroke-width":1.6},g);
   el("polygon",{points:`${x},${y-r+3} ${x-6.5},${y+7.5} ${x},${y+2.5} ${x+6.5},${y+7.5}`,
     fill:"var(--ink)"},g);
@@ -1516,19 +1449,29 @@ function drawScaleBar(){
      "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"#6a6a6a"});
 }
 
+let LEGEND_ROWS = 9;   // set by drawLegend, read by legendBox
+
 function drawLegend(){
   const g = group(map,"layer-legend");
-  const items = [
-    {type:"route",     text:"Race route (10K)"},
-    {type:"arrow",     text:"Direction of travel"},
-    {type:"volunteer", text:"Volunteer post (numbered)"},
-    {type:"water",     text:"Water station"},
-    {type:"music",     text:"Musician"},
-    {type:"bigfoot",   text:"Bigfoot"},
-    {type:"viewpoint", text:"Viewpoint"},
-    {type:"mile",      text:"Mile marker"},
-    {type:"trail",     text:"Other park trail"}
+  // Each entry names the layer it describes, so a switched-off feature drops
+   // out of the key instead of promising something the map is not showing.
+  const all = [
+    {type:"route",     layer:"route",     text:"Race route (10K)"},
+    {type:"arrow",     layer:"arrows",    text:"Direction of travel"},
+    {type:"volunteer", layer:"vol",       text:"Volunteer post (numbered)"},
+    {type:"water",     layer:"water",     text:"Water station"},
+    {type:"music",     layer:"music",     text:"Musician"},
+    {type:"bigfoot",   layer:"bigfoot",   text:"Bigfoot"},
+    {type:"viewpoint", layer:"viewpoint", text:"Viewpoint"},
+    {type:"mile",      layer:"mile",      text:"Mile marker"},
+    {type:"trail",     layer:"trails",    text:"Other park trail"},
+    {type:"river",     layer:"river",     text:"River / creek"},
+    {type:"contour",   layer:"terrain",   text:"Contour (20 m)"}
   ];
+  const items = all.filter(it => !map.classList.contains("off-"+it.layer));
+  LEGEND_ROWS = items.length;
+  if(!items.length) return;
+
   // Top-right, tucked under the title rule. This corner is clear of the route
   // for this course -- verified by scripts/check_layout.py, not by eye.
   // Re-run that check if you move it.
@@ -1544,6 +1487,12 @@ function drawLegend(){
     if(it.type==="route"){
       el("line",{x1:x-11,y1:y,x2:x+11,y2:y,stroke:"var(--route)","stroke-width":6,
         "stroke-linecap":"round"},g);
+    } else if(it.type==="river"){
+      el("line",{x1:x-11,y1:y,x2:x+11,y2:y,stroke:"var(--river)","stroke-width":3.4,
+        "stroke-linecap":"round"},g);
+    } else if(it.type==="contour"){
+      el("path",{d:`M${x-11},${y+4} Q${x-4},${y-6} ${x+3},${y+1} T${x+11},${y-3}`,
+        fill:"none",stroke:"var(--contour-index)","stroke-width":1.6},g);
     } else if(it.type==="trail"){
       el("line",{x1:x-11,y1:y,x2:x+11,y2:y,stroke:"var(--trail)","stroke-width":2.2,
         "stroke-dasharray":"7 5"},g);
@@ -1712,6 +1661,7 @@ function loadTrack(pts){
 document.querySelectorAll("#controls input[data-layer]").forEach(cb=>{
   cb.addEventListener("change",()=>{
     map.classList.toggle("off-"+cb.dataset.layer, !cb.checked);
+    render();   // the legend lists only what is switched on, so redraw it
   });
 });
 
@@ -1815,7 +1765,8 @@ const PRESETS = {
     // reserves a bottom band for the brief panel
     margins:{ left:56, right:56, top:0.100, bottom:0.145 },
     on:["route","terminus","arrows","trails","trailname","mile","water","vol",
-        "music","bigfoot","viewpoint","labels","title","legend","compass","scale","brief"],
+        "music","bigfoot","viewpoint","labels","title","legend","compass","scale","brief",
+        "river"],
     off:["elev","terrain"]
   },
   poster: {
@@ -1824,7 +1775,7 @@ const PRESETS = {
     margins:{ left:56, right:56, top:0.100, bottom:0.070 },
     on:["route","terminus","arrows","trails","trailname","mile","water","vol",
         "music","bigfoot","viewpoint","labels","title","legend","compass","scale",
-        "elev","terrain"],
+        "elev","terrain","river"],
     off:["brief"]
   }
 };
