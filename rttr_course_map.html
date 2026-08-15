@@ -113,7 +113,9 @@ body{
 
 /* ---------- THEMES ---------- */
 .theme-field{--route:#1a1a1a;--trail:#9a9a9a;--paper:#ffffff}
-.theme-mono {--route:#000000;--trail:#b0b0b0;--water:#000;--vol:#000;--music:#000;--bigfoot:#000}
+/* --accent must go black too: left green it survives as a muddy mid-grey on a
+   photocopied handout, which is the one output this theme exists for. */
+.theme-mono {--route:#000000;--trail:#b0b0b0;--water:#000;--vol:#000;--music:#000;--bigfoot:#000;--accent:#000}
 .theme-mono .marker-fill{fill:#fff}
 /* Poster palette: pale sage paper, deep understory green, redwood-bark accent.
    Grounded in the park itself rather than a generic warm-cream treatment. */
@@ -316,6 +318,11 @@ const DATA = {
 
   // All point features. type drives the symbol.
   // types: start | finish | startfinish | water | volunteer | music | bigfoot | medical | restroom | parking
+  //
+  // Labels place themselves: a collision pass nudges each one clear of the
+  // route, the mile squares, the panels and the other labels. Add an optional
+  // offset:[dx,dy] to overrule that and pin a label by hand -- an offset is
+  // treated as an instruction, so the pass leaves it exactly where you put it.
   // Emoji used for point features. Swap any of these in one place.
   symbols: {
     water:   "\u{1F4A7}",   // droplet
@@ -340,6 +347,21 @@ const DATA = {
 
   // Direction arrows spaced evenly along the route.
   directionArrows: { count: 14 },
+
+  // Sheet furniture placement. The map is projected into the area left after
+  // `margins`, so shrinking those stretches the course corner to corner and
+  // the legend / profile then float over map area the route does not use.
+  // top and bottom are fractions of sheet height; left/right are viewBox units.
+  // Presets override `margins` — the volunteer sheet reserves a bottom band
+  // for the brief, the poster does not.
+  // After moving any panel, re-run: python3 scripts/check_layout.py
+  layout: {
+    margins:   { left:56, right:56, top:0.100, bottom:0.070 },
+    legend:    { at:"top-right" },
+    elevation: { at:"bottom-left", width:0.46, height:0.070 },
+    scale:     { at:"bottom-right" },
+    compass:   { at:"bottom-right" }
+  },
 
   // Printed on the volunteer sheet under the map. Keep it short and true.
   // Radio channel and the course-lead phone are deliberately left as blank
@@ -395,9 +417,11 @@ function buildProjection(track){
   }
   const latMean = latSum/track.length;
 
-  // Margins in viewBox units. Extra room at top for the title block,
-  // extra at the bottom for legend + brief panel.
-  const mL=70, mR=70, mT=VB.h*0.115, mB=VB.h*(DATA.brief ? 0.235 : 0.14);
+  // Room for the title block at the top and whatever band the preset reserves
+  // at the bottom. The legend and profile are not reserved for: they float
+  // over corners the route leaves empty. See DATA.layout.
+  const M = DATA.layout.margins;
+  const mL=M.left, mR=M.right, mT=VB.h*M.top, mB=VB.h*M.bottom;
   const availW = VB.w - mL - mR;
   const availH = VB.h - mT - mB;
 
@@ -517,9 +541,109 @@ function drawSymbol(g, x, y, type, num){
   }
 }
 
+/* ---------- label collision pass ----------
+   Everything is drawn first, then measured and moved. Trying to place labels
+   while drawing cannot work: a label's best position depends on obstacles that
+   do not exist yet. LABELS and OBSTACLES are filled during the draw pass and
+   consumed by placeLabels() once the sheet is complete.
+
+   A marker label is never dropped -- a volunteer needs to know which post is
+   which. A trail name is dropped if nothing fits, because an unreadable name
+   stacked on top of another is worse than no name. */
+let LABELS = [];
+let OBSTACLES = [];
+
+/* getBBox() ignores the element's own transform, so rotated trail names need
+   their corners pushed through the matrix to get a true axis-aligned box. */
+function boxOf(node){
+  let b;
+  try { b = node.getBBox(); } catch(e){ return null; }
+  if(!b.width && !b.height) return null;
+  const m = node.transform.baseVal.consolidate();
+  if(!m) return {x:b.x, y:b.y, w:b.width, h:b.height};
+  const t = m.matrix;
+  const xs=[], ys=[];
+  for(const [x,y] of [[b.x,b.y],[b.x+b.width,b.y],[b.x,b.y+b.height],[b.x+b.width,b.y+b.height]]){
+    xs.push(t.a*x + t.c*y + t.e);
+    ys.push(t.b*x + t.d*y + t.f);
+  }
+  return {x:Math.min(...xs), y:Math.min(...ys),
+          w:Math.max(...xs)-Math.min(...xs), h:Math.max(...ys)-Math.min(...ys)};
+}
+
+function hit(a,b,pad){
+  return a.x-pad < b.x+b.w && a.x+a.w+pad > b.x &&
+         a.y-pad < b.y+b.h && a.y+a.h+pad > b.y;
+}
+
+/* Obstacles carry a cost rather than a veto. Overlapping a panel or another
+   label is fatal (100). Crossing the route line is merely undesirable (5):
+   these labels are drawn with a white halo, which is exactly what lets a trail
+   name sit legibly across a line, and a standard cartographic move. Treating
+   the route as fatal is what silently deleted RINCON FIRE ROAD -- the junction
+   a course monitor is named after. */
+const COST_FATAL = 100;
+const COST_ROUTE = 5;
+
+function addObstacle(node, cost){
+  const b = boxOf(node);
+  if(b){ b.cost = cost || COST_FATAL; OBSTACLES.push(b); }
+}
+
+/* Candidate displacements, smallest first, so a label only moves as far as it
+   must. [0,0] is always tried first: most labels never move at all. */
+function candidates(){
+  const out=[[0,0]];
+  for(const r of [15,26,40,58,80]){
+    for(let k=0;k<8;k++){
+      const a = k*Math.PI/4;
+      out.push([Math.round(Math.cos(a)*r), Math.round(Math.sin(a)*r)]);
+    }
+  }
+  return out;
+}
+
+function shiftNode(node,dx,dy){
+  const prev = node.getAttribute("transform") || "";
+  node.setAttribute("transform",`translate(${dx},${dy}) ${prev}`.trim());
+}
+
+function placeLabels(){
+  const pad = 2.5;
+  const minX = 10, maxX = VB.w-10, minY = 10, maxY = VB.h-10;
+  const placed = [];
+  const cands = candidates();
+
+  for(const L of LABELS){
+    const base = boxOf(L.node);
+    if(!base) continue;
+
+    // A hand-set offset in DATA is an instruction, not a suggestion.
+    if(L.manual){ placed.push(base); continue; }
+
+    let best=null, bestScore=Infinity;
+    for(const [dx,dy] of cands){
+      const b = {x:base.x+dx, y:base.y+dy, w:base.w, h:base.h};
+      if(b.x<minX || b.y<minY || b.x+b.w>maxX || b.y+b.h>maxY) continue;
+      let score = Math.hypot(dx,dy)*0.1;          // prefer the smallest move
+      for(const o of OBSTACLES) if(hit(b,o,pad)) score += o.cost;
+      for(const o of placed)    if(hit(b,o,pad)) score += COST_FATAL;
+      if(score < bestScore){ bestScore=score; best=[dx,dy,b]; }
+      if(score < 1) break;
+    }
+
+    // Only a genuinely fatal clash drops a name; riding over the route does not.
+    if(!best || (bestScore >= COST_FATAL && L.droppable)){ L.node.remove(); continue; }
+    const [dx,dy,b] = best;
+    if(dx||dy) shiftNode(L.node,dx,dy);
+    placed.push(b);
+  }
+}
+
 /* ---------- render ---------- */
 function render(){
   map.innerHTML="";
+  LABELS = []; OBSTACLES = [];
   map.setAttribute("viewBox",`0 0 ${VB.w} ${VB.h}`);
   map.setAttribute("preserveAspectRatio","xMidYMid meet");
 
@@ -548,7 +672,6 @@ function render(){
   drawOtherTrails();
   const proj = drawRoute();
   drawDirectionArrows(proj);
-  drawTrailNames();
   drawMileMarkers();
   drawMarkers();
   drawTitle();
@@ -557,6 +680,23 @@ function render(){
   drawLegend();
   drawBrief();
   drawElevation();
+  drawCredit();
+
+  // The route as a soft obstacle: labels prefer to avoid it, and the more of
+  // it a label would cross the stronger that preference, but a halo'd name
+  // riding over the line is acceptable when nothing better is available.
+  for(const [x,y] of proj) OBSTACLES.push({x:x-3, y:y-3, w:6, h:6, cost:COST_ROUTE});
+
+  // Panels last, so trail names get pushed out from under them.
+  for(const cls of ["layer-legend","layer-elev","layer-scale","layer-compass",
+                    "layer-brief","layer-title","layer-credit"]){
+    const g = map.querySelector("."+cls);
+    if(g && getComputedStyle(g).display !== "none") addObstacle(g);
+  }
+
+  // Trail names are drawn after the obstacles they must avoid are known.
+  drawTrailNames();
+  placeLabels();
 }
 
 function drawOtherTrails(){
@@ -605,16 +745,18 @@ function drawTermini(pts){
 
 function checkerFlag(g,x,y,label,side){
   const s=7;
-  el("rect",{x:x-s*1.5,y:y-s*1.5,width:s*3,height:s*3,fill:"#fff",
+  const plate = el("rect",{x:x-s*1.5,y:y-s*1.5,width:s*3,height:s*3,fill:"#fff",
     stroke:"var(--route)","stroke-width":3},g);
+  addObstacle(plate);
   for(let r=0;r<3;r++) for(let c=0;c<3;c++){
     if((r+c)%2===0) el("rect",{x:x-s*1.5+c*s,y:y-s*1.5+r*s,width:s,height:s,fill:"var(--route)"},g);
   }
   const below = side==="below";
-  txt(g, x, below ? y+s*3.4 : y-s*2.4, label,{
+  const node = txt(g, x, below ? y+s*3.4 : y-s*2.4, label,{
     "text-anchor":"middle","font-size":15,"font-weight":700,
     "font-family":"Barlow Semi Condensed, Arial, sans-serif",
     "letter-spacing":"0.06em",fill:"var(--route)",class:"halo"});
+  LABELS.push({ node, manual:false, droppable:false });
 }
 
 function drawDirectionArrows(pts){
@@ -648,12 +790,14 @@ function drawTrailNames(){
       el("line",{x1:x,y1:y,x2:tx,y2:ty,stroke:"var(--ink)","stroke-width":1.6,
         "marker-end":"url(#arrowhead)"},g);
     }
-    txt(g,x,y,t.text,{
+    const node = txt(g,x,y,t.text,{
       "text-anchor":"middle","font-size":14,"font-weight":600,
       "letter-spacing":"0.1em","font-family":"Barlow Semi Condensed, Arial, sans-serif",
       fill:"var(--ink)", class:"halo",
       transform: t.rotate ? `rotate(${t.rotate} ${x} ${y})` : null
     });
+    if(t.offset) shiftNode(node, t.offset[0], t.offset[1]);
+    LABELS.push({ node, manual: !!t.offset, droppable: true });
   }
 }
 
@@ -669,8 +813,9 @@ function drawMileMarkers(){
       const lat = TRACK[i-1][0]+(TRACK[i][0]-TRACK[i-1][0])*t;
       const lon = TRACK[i-1][1]+(TRACK[i][1]-TRACK[i-1][1])*t;
       const [x,y]=PROJ.toXY(lat,lon);
-      el("rect",{x:x-10,y:y-10,width:20,height:20,rx:3,fill:"#fff",
+      const box = el("rect",{x:x-10,y:y-10,width:20,height:20,rx:3,fill:"#fff",
         stroke:"var(--ink)","stroke-width":2.4},g);
+      addObstacle(box);
       txt(g,x,y,String(Math.round(next/step)),{
         "text-anchor":"middle","dominant-baseline":"central","font-size":13,
         "font-weight":700,"font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"var(--ink)"});
@@ -698,17 +843,24 @@ function drawMarkers(){
       continue;
     }
     const num = type==="volunteer" ? (m.num ?? ++autoNum) : null;
+    const before = g.childNodes.length;
     drawSymbol(g,x,y,type,num);
+    for(let i=before;i<g.childNodes.length;i++) addObstacle(g.childNodes[i]);
 
     if(m.label){
-      const t=txt(g,x+19,y-3,m.label,{
+      // Label and note travel together as one block so the pass cannot split
+      // "Post 4" from the note explaining what happens at post 4.
+      const block = el("g",{class:"marker-label"},g);
+      txt(block,x+19,y-3,m.label,{
         "font-size":14,"font-weight":600,"font-family":"Barlow Semi Condensed, Arial, sans-serif",
-        fill:"var(--ink)",class:"halo marker-label"});
+        fill:"var(--ink)",class:"halo"});
       if(m.note){
-        txt(g,x+19,y+12,m.note,{
+        txt(block,x+19,y+12,m.note,{
           "font-size":11.5,"font-family":"Barlow Semi Condensed, Arial, sans-serif",
-          fill:"#4a4a4a",class:"halo marker-label"});
+          fill:"#4a4a4a",class:"halo"});
       }
+      if(m.offset) shiftNode(block, m.offset[0], m.offset[1]);
+      LABELS.push({ node: block, manual: !!m.offset, droppable: false });
     }
   }
 }
@@ -733,36 +885,59 @@ function drawTitle(){
     stroke:"var(--ink)","stroke-width":2},g);
 }
 
+/* Bottom edge of the projected map area. The brief, when a preset shows it,
+   owns the band below this. */
+function mapFloor(){
+  return VB.h - VB.h*DATA.layout.margins.bottom;
+}
+
+/* The top-right furniture column. Legend sits at the top of it and the compass
+   and scale bar stack underneath, so all three live in the one corner this
+   course leaves empty. Everything is derived from here, so moving the legend
+   moves the whole stack together. */
+function legendBox(){
+  const w = 250, n = 8;
+  return {
+    x: VB.w - DATA.layout.margins.right - w,
+    y: VB.h*0.052 + VB.w*0.036 + 24,
+    w: w,
+    h: n*23 + 34
+  };
+}
+
 function drawCompass(){
   const g = group(map,"layer-compass");
-  const x=VB.w-100, y=VB.h*0.155, r=22;
-  el("circle",{cx:x,cy:y,r:r,fill:"#fff",stroke:"var(--ink)","stroke-width":1.6},g);
-  el("polygon",{points:`${x},${y-r+3} ${x-7},${y+8} ${x},${y+3} ${x+7},${y+8}`,
+  const b = legendBox();
+  const r=20, x=b.x+r+4, y=b.y+b.h+46;
+  el("circle",{cx:x,cy:y,r:r,fill:"var(--paper)",stroke:"var(--ink)","stroke-width":1.6},g);
+  el("polygon",{points:`${x},${y-r+3} ${x-6.5},${y+7.5} ${x},${y+2.5} ${x+6.5},${y+7.5}`,
     fill:"var(--ink)"},g);
-  txt(g,x,y+r+14,"N",{"text-anchor":"middle","font-size":15,"font-weight":700,
+  txt(g,x,y+r+13,"N",{"text-anchor":"middle","font-size":14,"font-weight":700,
     "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"var(--ink)"});
 }
 
 function drawScaleBar(){
   const g = group(map,"layer-scale");
-  const yBase = VB.h - (DATA.brief ? VB.h*0.20 : VB.h*0.055);
+  const b = legendBox();
+  const yBase = b.y + b.h + 42;
   // choose a round distance close to 120 viewBox units
   const targetM = 120 * PROJ.mPerUnit;
   const nice = [100,200,250,400,500,800,1000,1600,2000,3200,5000];
   const m = nice.reduce((a,b)=>Math.abs(b-targetM)<Math.abs(a-targetM)?b:a);
   const w = m / PROJ.mPerUnit;
-  const x0 = VB.w - 70 - w;   // right-aligned; legend now holds the left
+  const x0 = b.x + b.w - w;    // right edge aligned with the legend above it
   const h = 7;
   for(let i=0;i<4;i++){
     el("rect",{x:x0+i*w/4,y:yBase,width:w/4,height:h,
-      fill:i%2?"#fff":"var(--ink)",stroke:"var(--ink)","stroke-width":1},g);
+      fill:i%2?"var(--paper)":"var(--ink)",stroke:"var(--ink)","stroke-width":1},g);
   }
   const miles = (m/1609.344);
   const label = miles>=0.95 ? `${miles.toFixed(1)} mi` : `${Math.round(m*3.28084)} ft`;
   txt(g,x0,yBase-6,label,{"font-size":12.5,"font-weight":600,
     "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"var(--ink)"});
-  txt(g,VB.w-70,yBase-6,`${m>=1000?(m/1000)+" km":m+" m"}`,{"text-anchor":"end","font-size":11,
-    "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"#6a6a6a"});
+  txt(g,b.x+b.w,yBase-6,`${m>=1000?(m/1000)+" km":m+" m"}`,
+    {"text-anchor":"end","font-size":11,
+     "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"#6a6a6a"});
 }
 
 function drawLegend(){
@@ -777,10 +952,13 @@ function drawLegend(){
     {type:"mile",      text:"Mile marker"},
     {type:"trail",     text:"Other park trail"}
   ];
-  // Bottom-left: verified clear of the route for this course.
-  const x0 = 84, y0 = VB.h - (DATA.brief ? VB.h*0.205 : VB.h*0.055) - items.length*23 - 14;
-  el("rect",{x:x0-14,y:y0-24,width:250,height:items.length*23+34,
-    fill:"#fff",stroke:"var(--hair)","stroke-width":1.4,rx:3},g);
+  // Top-right, tucked under the title rule. This corner is clear of the route
+  // for this course -- verified by scripts/check_layout.py, not by eye.
+  // Re-run that check if you move it.
+  const b = legendBox();
+  const x0 = b.x + 14, y0 = b.y + 24;
+  el("rect",{x:b.x,y:b.y,width:b.w,height:b.h,
+    fill:"var(--paper)",stroke:"var(--hair)","stroke-width":1.4,rx:3},g);
   txt(g,x0,y0-8,"LEGEND",{"font-size":11.5,"font-weight":700,"letter-spacing":"0.16em",
     "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"#6a6a6a"});
 
@@ -811,11 +989,22 @@ function drawLegend(){
   });
 }
 
+/* ODbL credit for the route and the OSM trail network. Not a toggleable
+   layer: the licence requires it wherever the data appears. */
+function drawCredit(){
+  const g = group(map,"layer-credit");
+  txt(g, VB.w-DATA.layout.margins.right, VB.h-13,
+    "Route and trail data © OpenStreetMap contributors",
+    {"text-anchor":"end","font-size":10.5,
+     "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"#8a8a8a"});
+}
+
 function drawBrief(){
   if(!DATA.brief) return;
   const g = group(map,"layer-brief");
-  const pad=70;
-  const top = VB.h - VB.h*0.175;
+  // Sits in the band the volunteer preset reserves below the map, never over it.
+  const pad = DATA.layout.margins.left;
+  const top = mapFloor() + 30;
   el("line",{x1:pad,y1:top-16,x2:VB.w-pad,y2:top-16,stroke:"var(--ink)","stroke-width":2},g);
 
   const cols = DATA.brief.columns||[];
@@ -841,7 +1030,17 @@ function drawElevation(){
   const ele = DATA.ele||[];
   if(ele.length !== TRACK.length || ele.length<2) return;
 
-  const pad=70, top = VB.h - VB.h*0.175, h = VB.h*0.105, w = VB.w-pad*2;
+  // Bottom-left, sized from DATA.layout.elevation. It floats over map area
+  // the route does not reach, so the course can run corner to corner.
+  const cfg = DATA.layout.elevation;
+  const pad = DATA.layout.margins.left;
+  const w = (VB.w - pad*2) * cfg.width;
+  const h = VB.h * cfg.height;
+  const top = mapFloor() - h - 18;
+
+  // opaque backing so the profile reads over any trail dashes beneath it
+  el("rect",{x:pad-12,y:top-26,width:w+24,height:h+58,
+    fill:"var(--paper)",stroke:"var(--hair)","stroke-width":1.4,rx:3},g);
 
   // cumulative ground distance for the x axis
   const cum=[0];
@@ -999,12 +1198,16 @@ window.addEventListener("resize",()=>setPage(PAGE.w,PAGE.h));
 const PRESETS = {
   volunteer: {
     page:[8.5,11], theme:"theme-mono", symbols:"shapes",
+    // reserves a bottom band for the brief panel
+    margins:{ left:56, right:56, top:0.100, bottom:0.145 },
     on:["route","terminus","arrows","trails","trailname","mile","water","vol",
         "music","bigfoot","labels","title","legend","compass","scale","brief"],
     off:["elev"]
   },
   poster: {
     page:[24,36], theme:"theme-forest", symbols:"emoji",
+    // no brief, so the course runs almost to the bottom edge
+    margins:{ left:56, right:56, top:0.100, bottom:0.070 },
     on:["route","terminus","arrows","trails","trailname","mile","water","vol",
         "music","bigfoot","labels","title","legend","compass","scale","elev"],
     off:["brief"]
@@ -1013,6 +1216,7 @@ const PRESETS = {
 
 function applyPreset(name){
   const p = PRESETS[name]; if(!p) return;
+  if(p.margins) DATA.layout.margins = Object.assign({}, p.margins);
   document.body.className = p.theme;
   document.getElementById("themeSel").value = p.theme;
   SYMBOL_STYLE = p.symbols;
@@ -1032,6 +1236,11 @@ document.getElementById("presetSel").addEventListener("change",e=>applyPreset(e.
 /* boot */
 applyPreset("poster");
 document.getElementById("presetSel").value = "poster";
+
+// Label placement is measured from real text metrics, so it has to be redone
+// once the webfonts land -- Arial fallback boxes are a different width and the
+// first pass would leave everything nudged for the wrong typeface.
+if(document.fonts?.ready) document.fonts.ready.then(()=>render());
 </script>
 </body>
 </html>
