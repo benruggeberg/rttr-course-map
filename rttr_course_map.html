@@ -479,7 +479,7 @@ const DATA = {
     "PINE TRAIL":               { smooth:10, startOffset:80, dy:-22 },
     "POWDER MILL TRAIL":        { dy:-6,  startOffset:70 },
     "EAGLE CREEK TRAIL":        { startOffset:58, smooth:10 },
-    "RINCON FIRE RD":           { smooth:10, startOffset:32 }
+    "RINCON FIRE RD":           { smooth:10, startOffset:66 }
   },
 
   // Trail name labels. `at` is where the text sits.
@@ -1027,7 +1027,6 @@ function render(){
   drawScaleBar();
   drawLegend();
   drawBrief();
-  drawElevation();
 
   // The route as a soft obstacle: labels prefer to avoid it, and the more of
   // it a label would cross the stronger that preference, but a halo'd name
@@ -1044,7 +1043,27 @@ function render(){
   // Trail names are drawn after the obstacles they must avoid are known.
   drawTrailNames();
   placeLabels();
+
+  // The profile is drawn last and sits on top: it is a block of information,
+  // not scenery, and a trail name crossing it makes both unreadable. Anything
+  // it covers is reported by scripts/check_layout.py rather than left to be
+  // discovered on paper.
+  drawElevation();
   drawCredit();
+
+  // Labels that end up underneath the profile. They are not moved -- a
+  // path-bound name has nowhere to go -- but they must not be a surprise.
+  const ev = map.querySelector(".layer-elev");
+  if(ev && getComputedStyle(ev).display !== "none"){
+    const eb = boxOf(ev);
+    if(eb) for(const L of LABELS){
+      if(!L.node.isConnected) continue;
+      const b = boxOf(L.node);
+      if(b && hit(b, eb, 0))
+        LABEL_ISSUES.push({text:(L.node.textContent||"").trim().slice(0,32),
+          issue:"hidden under the elevation profile"});
+    }
+  }
 
   // A marker whose coordinate lands outside the map is reported on screen, to
   // whoever maintains the file. It is deliberately kept off the sheet: a
