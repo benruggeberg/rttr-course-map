@@ -25,6 +25,7 @@
   --bigfoot:#5c4033;
   --accent:#0f5c2e;
   --hair:#d8d8d8;
+  --trail-label:#8f8f8f;
 }
 
 *{box-sizing:border-box}
@@ -115,14 +116,16 @@ body{
 .theme-field{--route:#1a1a1a;--trail:#9a9a9a;--paper:#ffffff}
 /* --accent must go black too: left green it survives as a muddy mid-grey on a
    photocopied handout, which is the one output this theme exists for. */
-.theme-mono {--route:#000000;--trail:#b0b0b0;--water:#000;--vol:#000;--music:#000;--bigfoot:#000;--accent:#000}
+/* Background trail names go darker here than on screen: a mid grey that reads
+   fine on a monitor drops out entirely once the sheet has been photocopied. */
+.theme-mono {--route:#000000;--trail:#b0b0b0;--water:#000;--vol:#000;--music:#000;--bigfoot:#000;--accent:#000;--trail-label:#6e6e6e}
 .theme-mono .marker-fill{fill:#fff}
 /* Poster palette: pale sage paper, deep understory green, redwood-bark accent.
    Grounded in the park itself rather than a generic warm-cream treatment. */
 .theme-forest{
   --paper:#eef1ea; --ink:#1b2a1e;
   --route:#16341f; --route-casing:#eef1ea;
-  --trail:#a8b5a2; --hair:#c3cdbd;
+  --trail:#a8b5a2; --hair:#c3cdbd; --trail-label:#7d8a79;
   --accent:#6b2f1a;
   --water:#1f5f7a; --vol:#16341f; --music:#4a3a6b; --bigfoot:#4a3a2a;
 }
@@ -298,22 +301,34 @@ const DATA = {
     { name:null, path:[[37.041135,-122.061174],[37.04136,-122.060959],[37.04153,-122.060558]] }
   ],
 
+  // Two tiers of trail label, so the trails the course runs on never get
+  // confused with the trails it merely passes. onCourse:true entries are set
+  // dark and larger; everything else is smaller and grey, present for
+  // orientation only. scripts/fetch_trails.py sets the flag, detecting which
+  // trails the route follows and cross-checking against its COURSE_TRAILS list.
+  trailNameStyle: {
+    onCourse: { size:15,   weight:700, fill:"var(--ink)", track:"0.12em" },
+    other:    { size:11,   weight:500, fill:"var(--trail-label)", track:"0.07em" }
+  },
+
   // Trail name labels. `at` is where the text sits.
   // `to` is optional — draws a leader arrow from the text to that point.
+  // `offset:[dx,dy]` pins a label by hand and exempts it from auto-placement.
   trailNames: [
-    { text:"PIPELINE ROAD", at:[37.03658,-122.061966], rotate:59.4 },
+    { text:"PIPELINE ROAD", at:[37.022583,-122.048296], rotate:75.9, onCourse:true },
+    { text:"RIVER TRAIL", at:[37.036867,-122.062749], rotate:43.9, onCourse:true },
+    { text:"POWDER MILL FIRE ROAD", at:[37.021463,-122.0434], rotate:-64.4, onCourse:true },
+    { text:"INDIAN CREEK TRAIL", at:[37.038346,-122.059407], rotate:56.4, onCourse:true },
+    { text:"RINCON FIRE ROAD", at:[37.02702,-122.055986], rotate:47.6, onCourse:true },
+    { text:"RIDGE FIRE ROAD", at:[37.025289,-122.054405], rotate:37.0, onCourse:true },
     { text:"BEAR MOUNTAIN TRAIL", at:[37.040072,-122.059084], rotate:14.8 },
     { text:"NATURE TRAIL", at:[37.039497,-122.060523], rotate:-88.8 },
     { text:"PINE TRAIL", at:[37.024213,-122.041505], rotate:-63.8 },
-    { text:"RINCON FIRE ROAD", at:[37.028512,-122.052888], rotate:-53.2 },
-    { text:"RIDGE FIRE ROAD", at:[37.024239,-122.05177], rotate:0.9 },
     { text:"BIG ROCK HOLE TRAIL", at:[37.024557,-122.05495], rotate:-79.1 },
     { text:"EAGLE CREEK TRAIL", at:[37.030547,-122.051255], rotate:-5.5 },
     { text:"BUCKEYE TRAIL", at:[37.018166,-122.044453], rotate:-74.3 },
-    { text:"POWDER MILL FIRE ROAD", at:[37.026542,-122.042389], rotate:-64.1 },
     { text:"POWDER MILL TRAIL", at:[37.018557,-122.04256], rotate:-6.0 },
-    { text:"OX TRAIL PATH", at:[37.02928,-122.058338], rotate:-87.9 },
-    { text:"RIVER TRAIL", at:[37.0399,-122.064672], rotate:48.5 }
+    { text:"OX TRAIL PATH", at:[37.02928,-122.058338], rotate:-87.9 }
   ],
 
   // All point features. type drives the symbol.
@@ -626,7 +641,12 @@ function placeLabels(){
       const b = {x:base.x+dx, y:base.y+dy, w:base.w, h:base.h};
       if(b.x<minX || b.y<minY || b.x+b.w>maxX || b.y+b.h>maxY) continue;
       let score = Math.hypot(dx,dy)*0.1;          // prefer the smallest move
-      for(const o of OBSTACLES) if(hit(b,o,pad)) score += o.cost;
+      for(const o of OBSTACLES){
+        if(!hit(b,o,pad)) continue;
+        // A course trail's name belongs ON the route -- that is the thing it
+        // names -- so route contact costs it nothing. Everything else pays.
+        score += (o.cost===COST_ROUTE) ? L.routeCost : o.cost;
+      }
       for(const o of placed)    if(hit(b,o,pad)) score += COST_FATAL;
       if(score < bestScore){ bestScore=score; best=[dx,dy,b]; }
       if(score < 1) break;
@@ -756,7 +776,7 @@ function checkerFlag(g,x,y,label,side){
     "text-anchor":"middle","font-size":15,"font-weight":700,
     "font-family":"Barlow Semi Condensed, Arial, sans-serif",
     "letter-spacing":"0.06em",fill:"var(--route)",class:"halo"});
-  LABELS.push({ node, manual:false, droppable:false });
+  LABELS.push({ node, manual:false, droppable:false, routeCost: COST_ROUTE });
 }
 
 function drawDirectionArrows(pts){
@@ -790,14 +810,18 @@ function drawTrailNames(){
       el("line",{x1:x,y1:y,x2:tx,y2:ty,stroke:"var(--ink)","stroke-width":1.6,
         "marker-end":"url(#arrowhead)"},g);
     }
+    const st = (t.onCourse ? DATA.trailNameStyle.onCourse : DATA.trailNameStyle.other);
     const node = txt(g,x,y,t.text,{
-      "text-anchor":"middle","font-size":14,"font-weight":600,
-      "letter-spacing":"0.1em","font-family":"Barlow Semi Condensed, Arial, sans-serif",
-      fill:"var(--ink)", class:"halo",
+      "text-anchor":"middle","font-size":st.size,"font-weight":st.weight,
+      "letter-spacing":st.track,"font-family":"Barlow Semi Condensed, Arial, sans-serif",
+      fill:st.fill, class:"halo",
       transform: t.rotate ? `rotate(${t.rotate} ${x} ${y})` : null
     });
     if(t.offset) shiftNode(node, t.offset[0], t.offset[1]);
-    LABELS.push({ node, manual: !!t.offset, droppable: true });
+    // A course trail's name is never dropped: it is what a volunteer says on
+    // the radio. A background trail name is expendable if nothing fits.
+    LABELS.push({ node, manual: !!t.offset, droppable: !t.onCourse,
+                  routeCost: t.onCourse ? 0 : COST_ROUTE });
   }
 }
 
@@ -860,7 +884,8 @@ function drawMarkers(){
           fill:"#4a4a4a",class:"halo"});
       }
       if(m.offset) shiftNode(block, m.offset[0], m.offset[1]);
-      LABELS.push({ node: block, manual: !!m.offset, droppable: false });
+      LABELS.push({ node: block, manual: !!m.offset, droppable: false,
+                    routeCost: COST_ROUTE });
     }
   }
 }

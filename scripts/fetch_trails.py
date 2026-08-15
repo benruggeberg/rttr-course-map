@@ -46,6 +46,14 @@ HIGHWAY_TYPES = ["path", "footway", "track", "bridleway", "cycleway"]
 # a park signpost, so they are dropped by default rather than labelled.
 DEFAULT_EXCLUDE = ["Your Sister", "Bottom of the Low Road"]
 
+# The trails the 10K actually runs on. Their names are the ones a volunteer
+# says on the radio, so they get the prominent label style and everything else
+# is set smaller and grey to keep the two apart at a glance.
+COURSE_TRAILS = [
+    "River Trail", "Ridge Fire Road", "Powder Mill Fire Road",
+    "Pipeline Road", "Indian Creek Trail",
+]
+
 R_EARTH = 6378137.0
 
 
@@ -156,6 +164,10 @@ def main():
                     help="comma-separated trail names to drop entirely; OSM "
                          "carries some unofficial names that only confuse a "
                          "volunteer reading this at 7am")
+    ap.add_argument("--on-course", default=",".join(COURSE_TRAILS),
+                    help="comma-separated trails the course runs on. These get "
+                         "the prominent label style. Detection is automatic; "
+                         "this list is a safety net for uneven OSM coverage")
     ap.add_argument("--write", action="store_true", help="patch the HTML in place")
     args = ap.parse_args()
 
@@ -213,14 +225,20 @@ out body geom;
 
         for run in runs:
             xy = [proj(la, lo) for la, lo in run]
-            if path_length(xy) < args.min_length:
-                continue
+            length = path_length(xy)
 
-            # Drop trail the course itself runs along.
+            # Is this stretch the course itself? Its geometry is redundant --
+            # the route line already draws it -- but its NAME is the most
+            # valuable label on the sheet, so the run is kept and tagged.
+            near = 0.0
             if args.drop_coincident > 0:
-                near = sum(1 for p in xy if dist_to_route(p, route_xy) <= args.drop_coincident)
-                if near / len(xy) > 0.8:
-                    continue
+                near = sum(1 for p in xy
+                           if dist_to_route(p, route_xy) <= args.drop_coincident) / len(xy)
+            on_course = near > 0.8
+
+            # On-course runs only have to be long enough to anchor a label.
+            if length < (40.0 if on_course else args.min_length):
+                continue
 
             simp = simplify(xy, args.tolerance)
             idx = {id(p): i for i, p in enumerate(xy)}
@@ -228,23 +246,52 @@ out body geom;
             kept.append({
                 "name": name,
                 "path": [[round(la, 6), round(lo, 6)] for la, lo in keep_ll],
-                "length": path_length(xy),
+                "length": length,
                 "xy": simp,
+                "on_course": on_course,
             })
 
     kept.sort(key=lambda t: -t["length"])
     named = [t for t in kept if t["name"]]
-    print(f"  {len(kept)} segments kept ({len(named)} named), "
-          f"{sum(len(t['path']) for t in kept)} points total")
 
-    # One label per trail name, anchored on that name's longest segment.
+    # A trail counts as a course trail if the route measurably runs along it,
+    # or if it is named on --on-course. The explicit list exists because OSM
+    # coverage is uneven and a course trail missing from the map is the one
+    # error a volunteer cannot recover from.
+    forced = {n.strip().lower() for n in args.on_course.split(",") if n.strip()}
+    detected = {t["name"].lower() for t in named if t["on_course"]}
+    course_names = detected | forced
+
+    # Geometry for the course's own trails is dropped -- the route line is
+    # already there -- but their names survive into the label pass.
+    geom = [t for t in kept if not t["on_course"]]
+    print(f"  {len(geom)} segments drawn ({len([t for t in geom if t['name']])} named), "
+          f"{sum(len(t['path']) for t in geom)} points total")
+    print(f"  course trails detected: {sorted(detected) or 'none'}")
+    missing = sorted(n for n in forced if n not in {t['name'].lower() for t in named})
+    if missing:
+        print(f"  !! named on --on-course but absent from OSM here: {missing}")
+
+    # One label per trail name. For a course trail, prefer to anchor it on the
+    # stretch the course actually follows; otherwise take its longest segment.
     by_name = {}
     for t in named:
-        if t["name"] not in by_name or t["length"] > by_name[t["name"]]["length"]:
-            by_name[t["name"]] = t
+        key = t["name"]
+        cur = by_name.get(key)
+        if cur is None:
+            by_name[key] = t
+        elif key.lower() in course_names:
+            if t["on_course"] and not cur["on_course"]:
+                by_name[key] = t
+            elif t["on_course"] == cur["on_course"] and t["length"] > cur["length"]:
+                by_name[key] = t
+        elif t["length"] > cur["length"]:
+            by_name[key] = t
 
     labels = []
-    for name, t in sorted(by_name.items(), key=lambda kv: -kv[1]["length"]):
+    # Course trails first so the collision pass hands them the best positions.
+    for name, t in sorted(by_name.items(),
+                          key=lambda kv: (kv[0].lower() not in course_names, -kv[1]["length"])):
         xy, ll = t["xy"], t["path"]
         mid = len(ll) // 2
         a, b = max(0, mid - 1), min(len(ll) - 1, mid + 1)
@@ -260,6 +307,7 @@ out body geom;
             "text": name.upper(),
             "at": ll[mid],
             "rotate": round(rot, 1),
+            "onCourse": name.lower() in course_names,
         })
 
     trails_src = ",\n".join(
@@ -267,20 +315,26 @@ out body geom;
             json.dumps(t["name"]) if t["name"] else "null",
             "[" + ",".join("[%s,%s]" % (p[0], p[1]) for p in t["path"]) + "]",
         )
-        for t in kept
+        for t in geom
     )
     names_src = ",\n".join(
-        '    { text:%s, at:[%s,%s], rotate:%s }' % (
-            json.dumps(l["text"]), l["at"][0], l["at"][1], l["rotate"])
+        '    { text:%s, at:[%s,%s], rotate:%s%s }' % (
+            json.dumps(l["text"]), l["at"][0], l["at"][1], l["rotate"],
+            ", onCourse:true" if l["onCourse"] else "")
         for l in labels
     )
 
-    print("\nTrails by length:")
-    for t in kept[:40]:
+    print("\nTrails drawn, by length:")
+    for t in geom[:40]:
         print(f"  {t['length']:7.0f} m  {len(t['path']):3d} pts  {t['name'] or '(unnamed)'}")
 
-    print(f"\nLabels ({len(labels)}):")
-    for l in labels:
+    on = [l for l in labels if l["onCourse"]]
+    off = [l for l in labels if not l["onCourse"]]
+    print(f"\nCourse trail labels ({len(on)}):")
+    for l in on:
+        print(f"  {l['text']:<28} rotate {l['rotate']:>6.1f}  at {l['at']}")
+    print(f"\nOther trail labels ({len(off)}):")
+    for l in off:
         print(f"  {l['text']:<28} rotate {l['rotate']:>6.1f}  at {l['at']}")
 
     if not args.write:
@@ -300,7 +354,8 @@ out body geom;
     if new == html_text:
         sys.exit("Nothing was replaced -- the DATA block markers moved?")
     HTML.write_text(new, encoding="utf-8")
-    print(f"\nPatched {HTML.name}: {len(kept)} trails, {len(labels)} labels.")
+    print(f"\nPatched {HTML.name}: {len(geom)} trails drawn, {len(labels)} labels "
+          f"({len(on)} course, {len(off)} other).")
 
 
 if __name__ == "__main__":
