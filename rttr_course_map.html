@@ -314,9 +314,11 @@ body{
 const DATA = {
 
   meta: {
-    title:    "56th Annual Race Thru The Redwoods",
+    // Deliberately carries no year and no date, so the same sheet can be
+    // reused next year without editing anything but the markers.
+    title:    "Race Thru The Redwoods",
     subtitle: "10K Course · Henry Cowell Redwoods State Park",
-    date:     "Sunday, August 16, 2026",
+    date:     "",
     sheetNote:"",
     // Trails come from the California State Parks trail layer (unit 418), the
     // same data behind the official park map viewer. Viewpoints and the ODbL
@@ -409,15 +411,18 @@ const DATA = {
     // still exists and works where a trail runs straight.
     // Straight and wrapped: both switchback hard, and following the contour
     // there costs more legibility than it buys.
-    "RIDGE FIRE RD":            { placement:"block", wrap:14, rotate:-14,
-                                  offset:[-58,24] },
+    // 37.2 deg is the least-squares bearing of the route through the stretch
+    // this name labels, measured rather than estimated.
+    "RIDGE FIRE RD":            { placement:"block", wrap:14, rotate:37,
+                                  offset:[-66,52] },
     // Powder->Pine is only 155 units against 166 of text, so it silently fell
     // back to straight. Powder->Observation gives 313 and stays monotonic;
     // startOffset biases the name back down into the 5-to-7 stretch.
     "POWDER MILL FIRE RD":      { startOffset:27, dy:-38, smooth:14 },
     "PINE TRAIL":               { placement:"block", wrap:10, offset:[36,116] },
     "POWDER MILL TRAIL":        { dy:-6,  startOffset:70 },
-    "EAGLE CREEK TRAIL":        { startOffset:38 }
+    "EAGLE CREEK TRAIL":        { startOffset:38, smooth:10 },
+    "RINCON FIRE RD":           { smooth:10 }
   },
 
   // Trail name labels. `at` is where the text sits.
@@ -1458,9 +1463,11 @@ function drawTitle(){
   txt(g,pad,y+VB.w*0.026,DATA.meta.subtitle,{
     "font-size":VB.w*0.019,"font-family":"Barlow Semi Condensed, Arial, sans-serif",
     "font-weight":500,fill:"#3a3a3a"});
-  txt(g,VB.w-pad,y,DATA.meta.date,{
-    "text-anchor":"end","font-size":VB.w*0.019,"font-weight":600,
-    "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"var(--accent)"});
+  if(DATA.meta.date){
+    txt(g,VB.w-pad,y,DATA.meta.date,{
+      "text-anchor":"end","font-size":VB.w*0.019,"font-weight":600,
+      "font-family":"Barlow Semi Condensed, Arial, sans-serif",fill:"var(--accent)"});
+  }
   if(DATA.meta.sheetNote){
     txt(g,VB.w-pad,y+VB.w*0.021,DATA.meta.sheetNote,{
       "text-anchor":"end","font-size":VB.w*0.0125,

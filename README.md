@@ -1,8 +1,12 @@
 # RTTR Operations Course Map
 
-Single-file operations course map for the **56th Annual Race Thru The Redwoods**,
-a 10K trail run on Sunday, August 16, 2026, starting and finishing at Roaring
-Camp Railroads and running through Henry Cowell Redwoods State Park.
+Single-file operations course map for **Race Thru The Redwoods**, a 10K trail
+run starting and finishing at Roaring Camp Railroads and running through Henry
+Cowell Redwoods State Park.
+
+The sheet deliberately carries no year and no date, so the same file can be
+reused next year by updating markers alone. Set `DATA.meta.date` if a dated
+edition is ever wanted; the title block draws it only when it is non-empty.
 
 One file produces two outputs:
 
